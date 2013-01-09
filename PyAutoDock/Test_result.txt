@@ -94,7 +94,7 @@ q.identity  = Quaternion: 1.0000 + 0.0000i + 0.0000j + 0.0000k
 q.magnitude = 1.0
 ### Quaternion - Convert Quaternion to Angle-Axis
 Quaternion: 0.7070 + -0.2400i + -0.6650j + 0.0000k
-Angle = 1.5710983268, Axis3: -0.3394, -0.9403, 0.0000
+Angle = 1.5710983268, Axis3: -0.3395, -0.9406, 0.0000
 ### Quaternion - Convert Angle-Axis to Quaternion
 Angle = 1.57, Axis3: -0.3400, -0.9400, 0.0000
 Quaternion: 0.7074 + -0.2404i + -0.6647j + 0.0000k

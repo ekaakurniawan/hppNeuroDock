@@ -151,9 +151,7 @@ class Quaternion:
             axis.x = self.b / s
             axis.y = self.c / s
             axis.z = self.d / s
-            #TODO: Not sure if another normalization is needed (will be further
-            #      optimized based on the implementation)
-            # axis.normalize()
+            axis.normalize()
 
         return angle, axis
 
