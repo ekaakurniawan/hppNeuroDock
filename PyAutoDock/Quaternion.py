@@ -135,7 +135,9 @@ class Quaternion:
         if (self.a < -1.0) & (self.a > 1.0):
             self.normalize()
         
-        angle = 2.0 * math.acos(self.a)
+        # acos function is not directly supported by FPGA. Use atan instead.
+        # angle = 2.0 * math.acos(self.a)
+        angle = 2.0 * math.atan(math.sqrt(1.0 - self.a * self.a) / self.a)
         # Converting radians ranging from -pi to pi
         if angle > const.PI:
             angle -= const.TWOPI
