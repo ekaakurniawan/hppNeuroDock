@@ -79,7 +79,7 @@ class Molecule:
                     anchor,link=[int(x) for x in line.split()[1:]]
                     if stack[-1].anchor==anchor and stack[-1].link==link:
                         if self.atoms[anchor-1].no==anchor and self.atoms[link-1].no==link:
-                            stack[-1].axis=self.atoms[link-1].coords - self.atoms[anchor-1].coords
+                            stack[-1].axis=self.atoms[anchor-1].coords - self.atoms[link-1].coords
                             stack[-1].axis.normalize()
                             stack[-1].base=self.atoms[link-1].coords
                         else:
@@ -103,6 +103,8 @@ class Molecule:
         self.about=about
         for atom in self.atoms:
             atom.coords -= about
+        for branch in self.torsions:
+            branch.base -= about
         self.coords=[x.coords for x in self.atoms]
 
     def __repr__(self):
@@ -114,9 +116,12 @@ class Molecule:
         ''' Move the molecule as a whole according to the Axis3 vector for translation and Quaternion rot for rotation'''
         rotParam=rot.getRot()
         for atom,ori in zip(self.atoms,self.coords):
-            atom.coords = ori.transform(rotParam,move)
+            atom.coords.transform(rotParam,move)
 
     def twist(self, angles):
+        ''' apply the torsion angles.
+            alway do twist before transform anything
+        '''
         if len(angles)!=len(self.torsions):
             raise Exception('bad torsion parameter size')
         for angle,torsion in zip(angles,self.torsions):
@@ -126,21 +131,22 @@ class Molecule:
             torParam=quat.getRot()
             for atom in [x for x in self.atoms if x.no in torsion.torList]:
                 #print torsion.torList
-                print atom.coords
                 atom.coords = atom.coords - torsion.base
-                print atom.coords
                 atom.coords.transform(torParam,torsion.base)
 
 
-
-        
+    def resetCoords(self):
+        for atom, coord in zip(self.atoms, self.coords):
+            atom.coords=coord
 
 if __name__=='__main__':
     #mol=Molecule('Inputs/ind.pdbqt')
     mol=Molecule('test/1pgp_lig.pdbqt')
     print mol
     mol.setAbout(Axis3(22.894,28.598,40.259))
-    mol.twist([const.DEG2RAD*90]+[0.0]*10)
+    mol.resetCoords()
+    #mol.twist([const.DEG2RAD*90]+[0.0]*10)
+    mol.twist([x*const.DEG2RAD for x in [37.65,44.53,25.79,118.89,-87.74,106.41,82.69,-46.02,84.62,-58.47,153.66]])
     mol.transform(Axis3(22.894,28.598,40.259),Quaternion(1,0,0,0))
     #mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
     #mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.53221, 0.379383,0.612442,0.444674))
