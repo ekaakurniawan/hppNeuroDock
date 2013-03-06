@@ -1,4 +1,5 @@
 from Axis3 import Axis3
+from Quaternion import Quaternion
 import Constants as const
 
 #This program works only on Autodock PDBQT file format to read structure information
@@ -95,15 +96,17 @@ class Molecule:
             print tor
         return '\n'.join([str(x) for x in self.atoms])
 
-    def translate(self,move):
-        ''' Move the molecule as a whole according to the Axis3 vector move'''
+    def transform(self,move,rot):
+        ''' Move the molecule as a whole according to the Axis3 vector for translation and Quaternion rot for rotation'''
+        rotParam=rot.getRot()
         for atom in self.atoms:
-            atom.coords+=move
+            atom.coords = atom.coords.rotate(rotParam,move)
 
 if __name__=='__main__':
-    mol=Molecule('test/1pgp_lig.pdbqt')
+    mol=Molecule('Inputs/ind.pdbqt')
     print mol
-    #mol.about=Axis3(22.894,28.598,40.259)
-    mol.setAbout(Axis3(22.894,28.598,40.259))
-    mol.translate(Axis3(27.888006,30.240650,37.755848))
+    #mol.setAbout(Axis3(22.894,28.598,40.259))
+    #mol.transform(Axis3(22.894,28.598,40.259),Quaternion(0.711306,0.617115,0.004750,0.336437))
+    mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
+    mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.379383,0.612442,0.444674,0.532211))
     print mol

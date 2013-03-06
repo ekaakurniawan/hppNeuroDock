@@ -126,6 +126,41 @@ class Quaternion:
         self.c = 0.0
         self.d = 0.0
 
+    def getRot(self):
+        ''' This routine should be credited to Garrett M. Morris, The Scripps Research Institute
+            from the source code of Autodock (qtransform.cc)
+        '''
+        w=self.d
+        x=self.a
+        y=self.b
+        z=self.c
+        tx  = x+x
+        ty  = y+y
+        tz  = z+z
+        
+        twx = w*tx
+        omtxx = 1. - x*tx
+        txy = y*tx
+        txz = z*tx
+        twy = w*ty
+        
+        tyy = y*ty
+        tyz = z*ty
+        twz = w*tz
+        tzz = z*tz
+        
+        out=[]
+        out.append( 1. - tyy - tzz)
+        out.append(      txy - twz)
+        out.append(      txz + twy)
+        out.append(      txy + twz)
+        out.append( omtxx    - tzz)
+        out.append(      tyz - twx)
+        out.append(      txz - twy)
+        out.append(      tyz + twx)
+        out.append( omtxx    - tyy)
+        return out
+
     # Returns angle and axis
     # By convention, angle is in radians ranging from -pi to pi
     # Example:
