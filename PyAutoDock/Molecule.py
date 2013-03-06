@@ -1,3 +1,4 @@
+import copy
 from Axis3 import Axis3
 from Quaternion import Quaternion
 import Constants as const
@@ -58,6 +59,7 @@ class Molecule:
         self.name=filename
         self.torsions=[]
         self.atoms=[]
+        self.coords=[]
         self.about=None
         self.trans=None
         self.quate=None
@@ -81,6 +83,7 @@ class Molecule:
                     self.atoms.append(Atom(line[:-1]))
                     for branch in stack:
                         branch.torList.append(self.atoms[-1].no)
+        self.coords=[x.coords for x in self.atoms]
 
         # reorder the torsion list, put the most nested branch at first
         # this is important in order to make torsions easier
@@ -90,6 +93,7 @@ class Molecule:
         self.about=about
         for atom in self.atoms:
             atom.coords -= about
+        self.coords=[x.coords for x in self.atoms]
 
     def __repr__(self):
         for tor in self.torsions:
@@ -99,8 +103,8 @@ class Molecule:
     def transform(self,move,rot):
         ''' Move the molecule as a whole according to the Axis3 vector for translation and Quaternion rot for rotation'''
         rotParam=rot.getRot()
-        for atom in self.atoms:
-            atom.coords = atom.coords.rotate(rotParam,move)
+        for atom,ori in zip(self.atoms,self.coords):
+            atom.coords = ori.rotate(rotParam,move)
 
 if __name__=='__main__':
     mol=Molecule('Inputs/ind.pdbqt')
@@ -109,4 +113,5 @@ if __name__=='__main__':
     #mol.transform(Axis3(22.894,28.598,40.259),Quaternion(0.711306,0.617115,0.004750,0.336437))
     mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
     mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.379383,0.612442,0.444674,0.532211))
+    mol.transform(Axis3(2.742728,5.886342,-7.713194),Quaternion(0.470398,-0.503061,-0.346249,0.636998))
     print mol
