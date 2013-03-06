@@ -19,35 +19,7 @@
 #  - AutoDock 4.2.3 Source Code
 #    http://autodock.scripps.edu
 
-
-import math
-import Constants as const
-
-# Axis: x, y, z
-class Axis3(object):
-    @property
-    def axis(self):
-        return [self.x, self.y, self.z]
-    @axis.setter
-    def axis(self, value):
-        self.x = value[0]
-        self.y = value[1]
-        self.z = value[2]
-
-    def __init__(self, x = 0.0, y = 0.0, z = 0.0):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def __repr__(self):
-        return "Axis3: %.4f, %.4f, %.4f" % (self.x, self.y, self.z)
-
-    def normalize(self):
-        mag_xyz = math.sqrt(self.x * self.x + \
-                            self.y * self.y + \
-                            self.z * self.z)
-        if mag_xyz > const.APPROX_ZERO:
-            self.x /= mag_xyz
-            self.y /= mag_xyz
-            self.z /= mag_xyz
-
+class Grid:
+    def __init__(self):
+        self.maps = {}
+        self.field = None
