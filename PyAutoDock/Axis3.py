@@ -39,7 +39,7 @@ class Axis3:
     def __sub__(self, move):
         return Axis3(self.x-move.x, self.y-move.y, self.z-move.z)
 
-    def rotate(self, rot, move):
+    def transform(self, rot, move):
         tx=self.x*rot[0]+self.y*rot[3]+self.z*rot[6] + move.x
         ty=self.x*rot[1]+self.y*rot[4]+self.z*rot[7] + move.y
         tz=self.x*rot[2]+self.y*rot[5]+self.z*rot[8] + move.z

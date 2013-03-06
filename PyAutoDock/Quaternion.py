@@ -130,10 +130,10 @@ class Quaternion:
         ''' This routine should be credited to Garrett M. Morris, The Scripps Research Institute
             from the source code of Autodock (qtransform.cc)
         '''
-        w=self.d
-        x=self.a
-        y=self.b
-        z=self.c
+        w=self.a
+        x=self.b
+        y=self.c
+        z=self.d
         tx  = x+x
         ty  = y+y
         tz  = z+z
@@ -196,7 +196,7 @@ class Quaternion:
         half_angle = angle / 2
         self.a = math.cos(half_angle)
 
-        axis.normalize()
+        #axis.normalize()
         s = math.sin(half_angle)
         self.b = axis.x * s
         self.c = axis.y * s

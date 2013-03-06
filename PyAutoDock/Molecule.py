@@ -46,6 +46,8 @@ class Branch:
         self.anchor=anchor
         self.link=link
         self.rank=rank
+        self.axis=None
+        self.base=Axis3(0,0,0)
 
     def push(self,serial):
         self.torList.append(serial)
@@ -72,22 +74,30 @@ class Molecule:
                     anchor,link=[int(x) for x in line.split()[1:]]
                     rank=len(stack)
                     stack.append(Branch(anchor,link,rank))
+                    self.torsions.append(stack[-1])
                 elif line.startswith('ENDBRANCH'):
                     anchor,link=[int(x) for x in line.split()[1:]]
                     if stack[-1].anchor==anchor and stack[-1].link==link:
-                        self.torsions.append(stack.pop())
+                        if self.atoms[anchor-1].no==anchor and self.atoms[link-1].no==link:
+                            stack[-1].axis=self.atoms[link-1].coords - self.atoms[anchor-1].coords
+                            stack[-1].axis.normalize()
+                            stack[-1].base=self.atoms[link-1].coords
+                        else:
+                            raise Exception('bad atom serial numbering')
+                        stack.pop()
                     else:
                         # although not specified in anywhere, personally believe this will hold true
                         raise Exception('bad branching nesting!')
                 elif line.startswith('ATOM') or line.startswith('HETATM'):
                     self.atoms.append(Atom(line[:-1]))
                     for branch in stack:
-                        branch.torList.append(self.atoms[-1].no)
+                        if self.atoms[-1].no!=branch.anchor and self.atoms[-1].no!=branch.link:
+                            branch.torList.append(self.atoms[-1].no)
         self.coords=[x.coords for x in self.atoms]
 
-        # reorder the torsion list, put the most nested branch at first
+        # reorder the torsion list, put the branches with less movable atoms at first
         # this is important in order to make torsions easier
-        self.torsions.sort(key=lambda tor:tor.rank,reverse=True)
+        self.torsions.sort(key=lambda tor:len(tor.torList))
 
     def setAbout(self,about):
         self.about=about
@@ -104,14 +114,35 @@ class Molecule:
         ''' Move the molecule as a whole according to the Axis3 vector for translation and Quaternion rot for rotation'''
         rotParam=rot.getRot()
         for atom,ori in zip(self.atoms,self.coords):
-            atom.coords = ori.rotate(rotParam,move)
+            atom.coords = ori.transform(rotParam,move)
+
+    def twist(self, angles):
+        if len(angles)!=len(self.torsions):
+            raise Exception('bad torsion parameter size')
+        for angle,torsion in zip(angles,self.torsions):
+            quat=Quaternion()
+            quat.set_angle_axis(angle,torsion.axis)
+            print angle
+            torParam=quat.getRot()
+            for atom in [x for x in self.atoms if x.no in torsion.torList]:
+                #print torsion.torList
+                print atom.coords
+                atom.coords = atom.coords - torsion.base
+                print atom.coords
+                atom.coords.transform(torParam,torsion.base)
+
+
+
+        
 
 if __name__=='__main__':
-    mol=Molecule('Inputs/ind.pdbqt')
+    #mol=Molecule('Inputs/ind.pdbqt')
+    mol=Molecule('test/1pgp_lig.pdbqt')
     print mol
-    #mol.setAbout(Axis3(22.894,28.598,40.259))
-    #mol.transform(Axis3(22.894,28.598,40.259),Quaternion(0.711306,0.617115,0.004750,0.336437))
-    mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
-    mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.379383,0.612442,0.444674,0.532211))
-    mol.transform(Axis3(2.742728,5.886342,-7.713194),Quaternion(0.470398,-0.503061,-0.346249,0.636998))
+    mol.setAbout(Axis3(22.894,28.598,40.259))
+    mol.twist([const.DEG2RAD*90]+[0.0]*10)
+    mol.transform(Axis3(22.894,28.598,40.259),Quaternion(1,0,0,0))
+    #mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
+    #mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.53221, 0.379383,0.612442,0.444674))
+    #mol.transform(Axis3(2.742728,5.886342,-7.713194),Quaternion(0.636998, 0.470398,-0.503061,-0.346249))
     print mol
