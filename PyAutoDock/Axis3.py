@@ -33,6 +33,12 @@ class Axis3:
     def __repr__(self):
         return "Axis3: %.4f, %.4f, %.4f" % (self.x, self.y, self.z)
 
+    def __add__(self, move):
+        return Axis3(self.x+move.x, self.y+move.y, self.z+move.z)
+    
+    def __sub__(self, move):
+        return Axis3(self.x-move.x, self.y-move.y, self.z-move.z)
+
     def normalize(self):
         mag_xyz = math.sqrt(self.x * self.x + \
                             self.y * self.y + \

@@ -51,11 +51,16 @@ class Branch:
     def __repr__(self):
         return "Branch{%d} (%3d, %3d) " %(self.rank,self.anchor, self.link)+str(self.torList)
 
+
 class Molecule:
     def __init__(self,filename):
         self.name=filename
         self.torsions=[]
         self.atoms=[]
+        self.about=None
+        self.trans=None
+        self.quate=None
+        self.rbond=None
 
         stack=[]
         with open(filename,'r') as pdbqt:
@@ -80,13 +85,25 @@ class Molecule:
         # this is important in order to make torsions easier
         self.torsions.sort(key=lambda tor:tor.rank,reverse=True)
 
-
+    def setAbout(self,about):
+        self.about=about
+        for atom in self.atoms:
+            atom.coords -= about
 
     def __repr__(self):
         for tor in self.torsions:
             print tor
         return '\n'.join([str(x) for x in self.atoms])
 
+    def translate(self,move):
+        ''' Move the molecule as a whole according to the Axis3 vector move'''
+        for atom in self.atoms:
+            atom.coords+=move
+
 if __name__=='__main__':
-    mol=Molecule('Inputs/ind.pdbqt')
+    mol=Molecule('test/1pgp_lig.pdbqt')
+    print mol
+    #mol.about=Axis3(22.894,28.598,40.259)
+    mol.setAbout(Axis3(22.894,28.598,40.259))
+    mol.translate(Axis3(27.888006,30.240650,37.755848))
     print mol
