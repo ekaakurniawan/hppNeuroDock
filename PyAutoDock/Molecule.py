@@ -115,7 +115,7 @@ class Molecule:
     def transform(self,move,rot):
         ''' Move the molecule as a whole according to the Axis3 vector for translation and Quaternion rot for rotation'''
         rotParam=rot.getRot()
-        for atom,ori in zip(self.atoms,self.coords):
+        for atom in self.atoms:
             atom.coords.transform(rotParam,move)
 
     def twist(self, angles):
@@ -127,7 +127,6 @@ class Molecule:
         for angle,torsion in zip(angles,self.torsions):
             quat=Quaternion()
             quat.set_angle_axis(angle,torsion.axis)
-            print angle
             torParam=quat.getRot()
             for atom in [x for x in self.atoms if x.no in torsion.torList]:
                 #print torsion.torList
@@ -137,17 +136,21 @@ class Molecule:
 
     def resetCoords(self):
         for atom, coord in zip(self.atoms, self.coords):
-            atom.coords=coord
+            atom.coords=copy.deepcopy(coord)
 
 if __name__=='__main__':
     #mol=Molecule('Inputs/ind.pdbqt')
     mol=Molecule('test/1pgp_lig.pdbqt')
-    print mol
+    #print mol
     mol.setAbout(Axis3(22.894,28.598,40.259))
+    
     mol.resetCoords()
-    #mol.twist([const.DEG2RAD*90]+[0.0]*10)
+    mol.twist([const.DEG2RAD*x for x in [92.30, -123.03, -29.07, 23.56, -166.38, 136.34, 37.65, 44.53, 25.79, 118.89, -87.74]])
+    mol.transform(Axis3(29.905504,27.014664,43.309807),Quaternion(0.241375, 0.374112,-0.361016,-0.819418))
+    print mol
+    mol.resetCoords()
     mol.twist([x*const.DEG2RAD for x in [37.65,44.53,25.79,118.89,-87.74,106.41,82.69,-46.02,84.62,-58.47,153.66]])
-    mol.transform(Axis3(22.894,28.598,40.259),Quaternion(1,0,0,0))
+    mol.transform(Axis3(22.894,28.598,40.259),Quaternion(1, 0,0,0))
     #mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
     #mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.53221, 0.379383,0.612442,0.444674))
     #mol.transform(Axis3(2.742728,5.886342,-7.713194),Quaternion(0.636998, 0.470398,-0.503061,-0.346249))
