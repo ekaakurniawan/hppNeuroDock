@@ -139,19 +139,21 @@ class Molecule:
             atom.coords=copy.deepcopy(coord)
 
 if __name__=='__main__':
-    #mol=Molecule('Inputs/ind.pdbqt')
-    mol=Molecule('test/1pgp_lig.pdbqt')
+    mol=Molecule('Inputs/ind.pdbqt')
+    #mol=Molecule('test/1pgp_lig.pdbqt')
     #print mol
-    mol.setAbout(Axis3(22.894,28.598,40.259))
+    #mol.setAbout(Axis3(22.894,28.598,40.259))
     
-    mol.resetCoords()
-    mol.twist([const.DEG2RAD*x for x in [92.30, -123.03, -29.07, 23.56, -166.38, 136.34, 37.65, 44.53, 25.79, 118.89, -87.74]])
-    mol.transform(Axis3(29.905504,27.014664,43.309807),Quaternion(0.241375, 0.374112,-0.361016,-0.819418))
-    print mol
-    mol.resetCoords()
-    mol.twist([x*const.DEG2RAD for x in [37.65,44.53,25.79,118.89,-87.74,106.41,82.69,-46.02,84.62,-58.47,153.66]])
-    mol.transform(Axis3(22.894,28.598,40.259),Quaternion(1, 0,0,0))
-    #mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
-    #mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.53221, 0.379383,0.612442,0.444674))
-    #mol.transform(Axis3(2.742728,5.886342,-7.713194),Quaternion(0.636998, 0.470398,-0.503061,-0.346249))
+    #mol.resetCoords()
+    #mol.twist([const.DEG2RAD*x for x in [92.30, -123.03, -29.07, 23.56, -166.38, 136.34, 37.65, 44.53, 25.79, 118.89, -87.74]])
+    #mol.transform(Axis3(29.905504,27.014664,43.309807),Quaternion(0.241375, 0.374112,-0.361016,-0.819418))
+    #print mol
+    #mol.resetCoords()
+    #mol.twist([x*const.DEG2RAD for x in [37.65,44.53,25.79,118.89,-87.74,106.41,82.69,-46.02,84.62,-58.47,153.66]])
+    #mol.transform(Axis3(22.894,28.598,40.259),Quaternion(1, 0,0,0))
+    
+    mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
+    mol.twist([const.DEG2RAD*x for x in [-122.13,-179.41,-141.59,177.29,-179.46,-9.31]])
+    mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.532211,0.379383,0.612442,0.444674))
+
     print mol
