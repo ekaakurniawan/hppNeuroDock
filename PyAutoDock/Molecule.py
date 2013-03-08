@@ -30,7 +30,8 @@ class Atom:
         #some additional field is need to store the energy info
 
     def __repr__(self):
-        return self.line[:30]+("%8.3f%8.3f%8.3f" %(self.coords.x, self.coords.y, self.coords.z)) + self.line[54:]
+        #return self.line[:30]+("%8.3f%8.3f%8.3f" %(self.coords.x, self.coords.y, self.coords.z)) + self.line[54:]
+        return "ATOM  "+"%5d" %self.no+self.line[11:30]+("%8.3f%8.3f%8.3f" %(self.coords.x, self.coords.y, self.coords.z)) + self.line[54:]
         # this output may need to be updated in order to show the energies for dlg
 
 class Branch:
@@ -57,18 +58,21 @@ class Branch:
 
 
 class Molecule:
-    def __init__(self,filename):
-        self.name=filename
+    def __init__(self,ligname,flexname=None):
+        self.lig=ligname
+        self.flx=flexname
         self.torsions=[]
         self.atoms=[]
         self.coords=[]
+        self.ligAtom=0
+        self.ligTor=0
         self.about=None
         self.trans=None
         self.quate=None
         self.rbond=None
 
         stack=[]
-        with open(filename,'r') as pdbqt:
+        with open(self.lig,'r') as pdbqt:
             for line in pdbqt:
                 if line.startswith('BRANCH'):
                     anchor,link=[int(x) for x in line.split()[1:]]
@@ -94,6 +98,19 @@ class Molecule:
                         if self.atoms[-1].no!=branch.anchor and self.atoms[-1].no!=branch.link:
                             branch.torList.append(self.atoms[-1].no)
         self.coords=[x.coords for x in self.atoms]
+        self.ligAtom=len(self.atoms)
+
+        if self.flx!=None:
+            flex=Molecule(self.flx,None)
+            self.ligTor=len(self.torsions)
+            self.atoms += copy.deepcopy(flex.atoms)
+            self.torsions += copy.deepcopy(flex.torsions)
+            for atom in self.atoms[self.ligAtom:]:
+                atom.no += self.ligAtom
+            for torsion in self.torsions[self.ligTor:]:
+                torsion.anchor += self.ligAtom
+                torsion.link += self.ligAtom
+                torsion.torList = [x+self.ligAtom for x in torsion.torList]
 
         # reorder the torsion list, put the branches with less movable atoms at first
         # this is important in order to make torsions easier
@@ -101,9 +118,9 @@ class Molecule:
 
     def setAbout(self,about):
         self.about=about
-        for atom in self.atoms:
+        for atom in self.atoms[:self.ligAtom]:
             atom.coords -= about
-        for branch in self.torsions:
+        for branch in self.torsions[:self.ligTor]:
             branch.base -= about
         self.coords=[x.coords for x in self.atoms]
 
@@ -115,7 +132,7 @@ class Molecule:
     def transform(self,move,rot):
         ''' Move the molecule as a whole according to the Axis3 vector for translation and Quaternion rot for rotation'''
         rotParam=rot.getRot()
-        for atom in self.atoms:
+        for atom in self.atoms[:self.ligAtom]:
             atom.coords.transform(rotParam,move)
 
     def twist(self, angles):
@@ -139,7 +156,8 @@ class Molecule:
             atom.coords=copy.deepcopy(coord)
 
 if __name__=='__main__':
-    mol=Molecule('Inputs/ind.pdbqt')
+    #mol=Molecule('Inputs/ind.pdbqt')
+    mol=Molecule('Inputs/ind.pdbqt','Inputs/hsg1_flex.pdbqt')
     #mol=Molecule('test/1pgp_lig.pdbqt')
     #print mol
     #mol.setAbout(Axis3(22.894,28.598,40.259))
@@ -153,7 +171,8 @@ if __name__=='__main__':
     #mol.transform(Axis3(22.894,28.598,40.259),Quaternion(1, 0,0,0))
     
     mol.setAbout(Axis3(0.368900,-0.214800,-4.986500))
-    mol.twist([const.DEG2RAD*x for x in [-122.13,-179.41,-141.59,177.29,-179.46,-9.31]])
+    #mol.twist([const.DEG2RAD*x for x in [-122.13,-179.41,-141.59,177.29,-179.46,-9.31,0,0,0,0,0,0]])
+    mol.twist([const.DEG2RAD*x for x in [-122.13,-179.41,-141.59,177.29,-179.46,-9.31,132.37,-89.19,78.43,22.22,71.37,59.52]])
     mol.transform(Axis3(2.056477,5.846611,-7.245407),Quaternion(0.532211,0.379383,0.612442,0.444674))
 
     print mol
