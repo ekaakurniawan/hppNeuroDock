@@ -311,11 +311,6 @@ class DockCalcEnergy(unittest.TestCase):
         dock = Dock(grid, ligand)
         dock.calc_energy()
 
-        #print "exp_elecs = %s" % dock.elecs
-        #print "exp_elec_total = %s" % dock.elec_total
-        #print "exp_emaps = %s" % dock.emaps
-        #print "exp_emap_total = %s" % dock.emap_total
-
         exp_elecs = [-0.037623435264000013, -0.11408866126250672, \
                      -0.13002690236871114, -0.11316478799697538, \
                      0.079400682425344024, 0.16382104147968005, \

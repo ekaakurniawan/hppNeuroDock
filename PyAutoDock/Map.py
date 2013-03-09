@@ -19,8 +19,6 @@
 #  - AutoDock 4.2.3 Source Code (readmap.cc)
 #    http://autodock.scripps.edu
 
-DEBUG = False
-
 import numpy as np
 import operator
 
@@ -149,11 +147,3 @@ class AtomTypeMap:
     def test_print(self):
         for i in xrange(-10, -0):
             print self.map[60][60][i]
-
-if DEBUG:
-    import Parameters
-    field = Parameters.Field()
-    field.read("./Parameters/hsg1_rigid.maps.fld")
-    map = ElectrostaticMap()
-    map.read("./Maps/hsg1_rigid.e.map", field)
-    map.test_print()

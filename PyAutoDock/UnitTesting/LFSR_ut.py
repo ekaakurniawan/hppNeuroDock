@@ -18,7 +18,7 @@
 import unittest
 from LFSR import *
 
-class ListTestGenerate(unittest.TestCase):
+class LfsrTestGenerate(unittest.TestCase):
     def testGenerate(self):
         exp = [33303,
                49419,
@@ -74,7 +74,7 @@ class ListTestGenerate(unittest.TestCase):
             self.assertEquals(lfsr.sign(), exp[i])
 
 def suite():
-    suite1 = unittest.makeSuite(ListTestGenerate)
+    suite1 = unittest.makeSuite(LfsrTestGenerate)
     return unittest.TestSuite((suite1, ))
 
 if __name__ == '__main__':

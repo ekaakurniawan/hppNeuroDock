@@ -19,8 +19,6 @@
 #  - AutoDock 4.2.3 Source Code (readfield.cc)
 #    http://autodock.scripps.edu
 
-DEBUG = False
-
 from Axis3 import *
 
 class Field:
@@ -81,8 +79,3 @@ class Field:
         print "Center      : %s" % self.center.xyz
         print "Lo          : %s" % self.lo.xyz
         print "Hi          : %s" % self.hi.xyz
-
-if DEBUG:
-    field = Field()
-    field.read("./Parameters/hsg1_rigid.maps.fld")
-    field.test_print()

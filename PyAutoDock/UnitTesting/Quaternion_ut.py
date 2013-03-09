@@ -19,14 +19,14 @@ import unittest
 from Quaternion import *
 from LFSR import *
 
-class ListTestInit(unittest.TestCase):
+class QuaternionTestInit(unittest.TestCase):
     def testInit(self):
         q = Quaternion()
         self.assertEquals(str(q), "Quaternion: 1.0000 + 0.0000i + 0.0000j + 0.0000k")
         q = Quaternion(1.2, 2.3, 3.4, 4.5)
         self.assertEquals(str(q), "Quaternion: 1.2000 + 2.3000i + 3.4000j + 4.5000k")
 
-class ListTestCopy(unittest.TestCase):
+class QuaternionTestCopy(unittest.TestCase):
     def testCopy(self):
         q = Quaternion(1.2, 2.3, 3.4, 4.5)
         q1 = q.copy()
@@ -37,7 +37,7 @@ class ListTestCopy(unittest.TestCase):
         self.assertEquals(str(q), "Quaternion: 1.2000 + 2.3000i + 3.4000j + 4.5000k")
         self.assertEquals(str(q1), "Quaternion: 100.0020 + 200.0030i + 300.0040j + 400.0050k")
 
-class ListTestUniform(unittest.TestCase):
+class QuaternionTestUniform(unittest.TestCase):
     def testUniform(self):
         exp_q = ["Quaternion: -0.5105 + -0.7011i + 0.0180j + 0.4976k",
                  "Quaternion: 0.1267 + -0.5028i + -0.7474j + -0.4153k",
@@ -79,7 +79,7 @@ class ListTestUniform(unittest.TestCase):
             self.assertGreaterEqual(angle - exp_angle[i], -0.0001)
             self.assertEquals(str(axis), exp_axis[i])
 
-class ListTestMultiplication(unittest.TestCase):
+class QuaternionTestMultiplication(unittest.TestCase):
     def testMultiplication(self):
         q = Quaternion(0.3627, 0.3898, 0.8427, 0.0798)
         q1 = Quaternion(0.5221, -0.6938, 0.0376, -0.4946)
@@ -92,7 +92,7 @@ class ListTestMultiplication(unittest.TestCase):
         self.assertLessEqual(1 - q1.magnitude(), 0.00001)
         self.assertGreaterEqual(1 - q1.magnitude(), -0.00001)
 
-class ListTestNormalize(unittest.TestCase):
+class QuaternionTestNormalize(unittest.TestCase):
     def testNormalize(self):
         q = Quaternion(0.4676, -0.4679, 0.5910, 0.4616)
         q.normalize()
@@ -109,13 +109,13 @@ class ListTestNormalize(unittest.TestCase):
         self.assertLessEqual(1 - q.magnitude(), 0.00001)
         self.assertGreaterEqual(1 - q.magnitude(), -0.00001)
 
-class ListTestConjugate(unittest.TestCase):
+class QuaternionTestConjugate(unittest.TestCase):
     def testConjugate(self):
         q = Quaternion(-0.3308, -0.7273, -0.3217, 0.5080)
         q.conjugate()
         self.assertEquals(str(q), "Quaternion: -0.3308 + 0.7273i + 0.3217j + -0.5080k")
 
-class ListTestIdentity(unittest.TestCase):
+class QuaternionTestIdentity(unittest.TestCase):
     def testInit(self):
         q = Quaternion(-0.3308, 0.7273, 0.3217, -0.5080)
         q.identity()
@@ -123,7 +123,7 @@ class ListTestIdentity(unittest.TestCase):
         self.assertLessEqual(1 - q.magnitude(), 0.00001)
         self.assertGreaterEqual(1 - q.magnitude(), -0.00001)
 
-class ListTestConversion(unittest.TestCase):
+class QuaternionTestConversion(unittest.TestCase):
     def testQuaternionToAngleAxis(self):
         q = Quaternion(a = 0.707, b = -0.240, c = -0.665, d = 0.000)
         angle, axis = q.get_angle_axis()
@@ -140,14 +140,14 @@ class ListTestConversion(unittest.TestCase):
         self.assertEquals(str(q), "Quaternion: 0.7074 + -0.2404i + -0.6647j + 0.0000k")
 
 def suite():
-    suite1 = unittest.makeSuite(ListTestInit)
-    suite2 = unittest.makeSuite(ListTestCopy)
-    suite3 = unittest.makeSuite(ListTestUniform)
-    suite4 = unittest.makeSuite(ListTestMultiplication)
-    suite5 = unittest.makeSuite(ListTestNormalize)
-    suite6 = unittest.makeSuite(ListTestConjugate)
-    suite7 = unittest.makeSuite(ListTestIdentity)
-    suite8 = unittest.makeSuite(ListTestConversion)
+    suite1 = unittest.makeSuite(QuaternionTestInit)
+    suite2 = unittest.makeSuite(QuaternionTestCopy)
+    suite3 = unittest.makeSuite(QuaternionTestUniform)
+    suite4 = unittest.makeSuite(QuaternionTestMultiplication)
+    suite5 = unittest.makeSuite(QuaternionTestNormalize)
+    suite6 = unittest.makeSuite(QuaternionTestConjugate)
+    suite7 = unittest.makeSuite(QuaternionTestIdentity)
+    suite8 = unittest.makeSuite(QuaternionTestConversion)
     return unittest.TestSuite((suite1, suite2, suite3, suite4, suite5, suite6, \
                                suite7, suite8, ))
 

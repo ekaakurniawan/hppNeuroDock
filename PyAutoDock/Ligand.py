@@ -19,8 +19,6 @@
 #  - AutoDock 4.2.3 Source Code (readPDBQT.cc)
 #    http://autodock.scripps.edu
 
-DEBUG = False
-
 from Atom import *
 
 class Ligand:
@@ -54,10 +52,3 @@ class Ligand:
                                                       atom.tcoord.x, \
                                                       atom.tcoord.y, \
                                                       atom.tcoord.z)
-
-if DEBUG:
-    ligand = Ligand()
-    ligand.read_pdbqt("./Inputs/ind.pdbqt")
-    ligand.test_print()
-    ligand.update_tcoord_model("./Results/ind.model")
-    ligand.test_print()

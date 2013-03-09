@@ -19,8 +19,6 @@
 #  - AutoDock 4.2.3 Source Code (trilinterp.cc)
 #    http://autodock.scripps.edu
 
-DEBUG = False
-
 class Dock:
     def __init__(self, grid, ligand):
         self.grid = grid

@@ -18,7 +18,7 @@
 import unittest
 from Axis3 import *
 
-class ListTestInit(unittest.TestCase):
+class Axis3TestInit(unittest.TestCase):
     def testInit(self):
         axis = Axis3()
         self.assertEquals(axis.xyz, [0.0, 0.0, 0.0])
@@ -26,7 +26,7 @@ class ListTestInit(unittest.TestCase):
         axis = Axis3(1.2, 2.3, 3.4)
         self.assertEquals(axis.xyz, [1.2, 2.3, 3.4])
 
-class ListTestNormalize(unittest.TestCase):
+class Axis3TestNormalize(unittest.TestCase):
     def testNormalize(self):
         axis = Axis3(1.2, 2.3, 3.4)
         axis.normalize()
@@ -38,8 +38,8 @@ class ListTestNormalize(unittest.TestCase):
         self.assertGreaterEqual(axis.z - 0.7950, -0.0001)
 
 def suite():
-    suite1 = unittest.makeSuite(ListTestInit)
-    suite2 = unittest.makeSuite(ListTestNormalize)
+    suite1 = unittest.makeSuite(Axis3TestInit)
+    suite2 = unittest.makeSuite(Axis3TestNormalize)
     return unittest.TestSuite((suite1, suite2))
 
 if __name__ == '__main__':
