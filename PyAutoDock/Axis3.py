@@ -26,10 +26,10 @@ import Constants as const
 # Axis: x, y, z
 class Axis3(object):
     @property
-    def axis(self):
+    def xyz(self):
         return [self.x, self.y, self.z]
-    @axis.setter
-    def axis(self, value):
+    @xyz.setter
+    def xyz(self, value):
         self.x = value[0]
         self.y = value[1]
         self.z = value[2]

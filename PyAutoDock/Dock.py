@@ -35,7 +35,7 @@ class Dock:
     # 3D Linear Interpolation
     @staticmethod
     def calc_linInterp3(grid, ligand):
-        lo_x, lo_y, lo_z = grid.field.lo.axis
+        lo_x, lo_y, lo_z = grid.field.lo.xyz
         spacing = grid.field.spacing
         atom_len = len(ligand.atoms)
         

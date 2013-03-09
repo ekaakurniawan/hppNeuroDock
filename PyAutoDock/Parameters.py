@@ -46,14 +46,14 @@ class Field:
 
         # Number of Elements
         line = p_file.readline()
-        self.num_points.axis = [int(element) for element in line.split(" ")[1:4]]
+        self.num_points.xyz = [int(element) for element in line.split(" ")[1:4]]
         # AutoGrid always adds number of elements with one for each dimension
         # as the center point
-        self.num_points1.axis = [element + 1 for element in self.num_points.axis]
+        self.num_points1.xyz = [element + 1 for element in self.num_points.xyz]
         
         # Center
         line = p_file.readline()
-        self.center.axis = [float(center) for center in line.split(" ")[1:4]]
+        self.center.xyz = [float(center) for center in line.split(" ")[1:4]]
 
         # Macromolecule
         line = p_file.readline()
@@ -76,11 +76,11 @@ class Field:
 
     def test_print(self):
         print "Spacing     : %s" % self.spacing
-        print "nPoints     : %s" % self.num_points.axis
-        print "nPoints + 1 : %s" % self.num_points1.axis
-        print "Center      : %s" % self.center.axis
-        print "Lo          : %s" % self.lo.axis
-        print "Hi          : %s" % self.hi.axis
+        print "nPoints     : %s" % self.num_points.xyz
+        print "nPoints + 1 : %s" % self.num_points1.xyz
+        print "Center      : %s" % self.center.xyz
+        print "Lo          : %s" % self.lo.xyz
+        print "Hi          : %s" % self.hi.xyz
 
 if DEBUG:
     field = Field()

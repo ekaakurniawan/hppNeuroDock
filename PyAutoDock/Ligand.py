@@ -45,7 +45,7 @@ class Ligand:
                 if "ATOM" in line:
                     data = line.split()
                     if data[3] != "IND": continue
-                    self.atoms[int(data[1]) - 1].tcoord.axis = \
+                    self.atoms[int(data[1]) - 1].tcoord.xyz = \
                         [float(coord) for coord in data[6:9]]
 
     def test_print(self):

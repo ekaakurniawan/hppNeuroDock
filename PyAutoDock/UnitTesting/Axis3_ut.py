@@ -21,10 +21,10 @@ from Axis3 import *
 class ListTestInit(unittest.TestCase):
     def testInit(self):
         axis = Axis3()
-        self.assertEquals(axis.axis, [0.0, 0.0, 0.0])
+        self.assertEquals(axis.xyz, [0.0, 0.0, 0.0])
 
         axis = Axis3(1.2, 2.3, 3.4)
-        self.assertEquals(axis.axis, [1.2, 2.3, 3.4])
+        self.assertEquals(axis.xyz, [1.2, 2.3, 3.4])
 
 class ListTestNormalize(unittest.TestCase):
     def testNormalize(self):

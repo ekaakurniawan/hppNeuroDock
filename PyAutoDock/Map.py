@@ -56,10 +56,10 @@ class ElectrostaticMap:
 
         # Get Map Values
         # --------------
-        volume = reduce(operator.mul, field.num_points1.axis)
+        volume = reduce(operator.mul, field.num_points1.xyz)
         # Axis allocation: map[z][y][x]
         self.map = (np.array(p_file.read().split('\n')[:volume], \
-                             dtype = np.float)).reshape(field.num_points1.axis)
+                             dtype = np.float)).reshape(field.num_points1.xyz)
         p_file.close()
 
     def test_print(self):
@@ -98,10 +98,10 @@ class DesolvationMap:
 
         # Get Map Values
         # --------------
-        volume = reduce(operator.mul, field.num_points1.axis)
+        volume = reduce(operator.mul, field.num_points1.xyz)
         # Axis allocation: map[z][y][x]
         self.map = (np.array(p_file.read().split('\n')[:volume], \
-                             dtype = np.float)).reshape(field.num_points1.axis)
+                             dtype = np.float)).reshape(field.num_points1.xyz)
         p_file.close()
 
     def test_print(self):
@@ -140,10 +140,10 @@ class AtomTypeMap:
 
         # Get Map Values
         # --------------
-        volume = reduce(operator.mul, field.num_points1.axis)
+        volume = reduce(operator.mul, field.num_points1.xyz)
         # Axis allocation: map[z][y][x]
         self.map = (np.array(p_file.read().split('\n')[:volume], \
-                             dtype = np.float)).reshape(field.num_points1.axis)
+                             dtype = np.float)).reshape(field.num_points1.xyz)
         p_file.close()
 
     def test_print(self):
