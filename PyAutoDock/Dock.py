@@ -25,19 +25,24 @@ class Dock:
     def __init__(self, grid, ligand):
         self.grid = grid
         self.ligand = ligand
+        # Electrostatic
         self.elecs = []
         self.elec_total = 0.0
+        # Van der Waals
         self.emaps = []
         self.emap_total = 0.0
 
-    def interp3(self):
-        lo_x, lo_y, lo_z = self.grid.field.lo.axis
-        spacing = self.grid.field.spacing
+    # 3D Linear Interpolation
+    @staticmethod
+    def calc_linInterp3(grid, ligand):
+        lo_x, lo_y, lo_z = grid.field.lo.axis
+        spacing = grid.field.spacing
+        atom_len = len(ligand.atoms)
         
         u = []
         v = []
         w = []
-        for atom in self.ligand.atoms:
+        for atom in ligand.atoms:
             u.append((atom.tcoord.x - lo_x) / spacing)
             v.append((atom.tcoord.y - lo_y) / spacing)
             w.append((atom.tcoord.z - lo_z) / spacing)
@@ -49,8 +54,6 @@ class Dock:
         u1 = [i + 1 for i in u0]
         v1 = [i + 1 for i in v0]
         w1 = [i + 1 for i in w0]
-
-        atom_len = len(self.ligand.atoms)
     
         p0u = [u[i] - float(u0[i]) for i in xrange(atom_len)]
         p0v = [v[i] - float(v0[i]) for i in xrange(atom_len)]
@@ -74,11 +77,12 @@ class Dock:
 
     def calc_energy(self):
         u0, v0, w0, u1, v1, w1, \
-        p000, p001, p010, p011, p100, p101, p110, p111 = self.interp3()
-                
+            p000, p001, p010, p011, p100, p101, p110, p111 = \
+            self.calc_linInterp3(self.grid, self.ligand)
+
         atom_len = len(self.ligand.atoms)
                 
-        es = []
+        es = [] # Electrostatic
         for i in xrange(atom_len):
             e = 0.0
             e += p000[i] * self.grid.maps['e'][w1[i]][v1[i]][u1[i]]
@@ -91,7 +95,7 @@ class Dock:
             e += p111[i] * self.grid.maps['e'][w0[i]][v0[i]][u0[i]]
             es.append(e)
 
-        ds = []
+        ds = [] # Desolvation
         for i in xrange(atom_len):
             d = 0.0
             d += p000[i] * self.grid.maps['d'][w1[i]][v1[i]][u1[i]]
@@ -104,7 +108,7 @@ class Dock:
             d += p111[i] * self.grid.maps['d'][w0[i]][v0[i]][u0[i]]
             ds.append(d)
 
-        ms = []
+        ms = [] # Atom Type
         for i, atom in enumerate(self.ligand.atoms):
             m = 0.0
             type = atom.type
@@ -118,6 +122,7 @@ class Dock:
             m += p111[i] * self.grid.maps[type][w0[i]][v0[i]][u0[i]]
             ms.append(m)
 
+        # Electrostatic
         self.elecs = []
         self.elec_total = 0.0
         for i, atom in enumerate(self.ligand.atoms):
@@ -125,6 +130,7 @@ class Dock:
             self.elecs.append(self.elec)
             self.elec_total += self.elec
 
+        # Van der Waals
         self.emaps = []
         self.emap_total = 0.0
         for i, atom in enumerate(self.ligand.atoms):
