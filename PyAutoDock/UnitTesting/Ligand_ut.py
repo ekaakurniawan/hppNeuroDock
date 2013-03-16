@@ -16,7 +16,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import unittest
-from Ligand import *
+from Ligand import Ligand
 
 class LigandAtoms(unittest.TestCase):
     def testRead(self):
@@ -229,7 +229,7 @@ class LigandAtoms(unittest.TestCase):
                0.393,
                0.21]
         for i, atom in enumerate(ligand.atoms):
-            self.assertEquals(atom.abs_charge, exp[i])
+            self.assertEquals(abs(atom.charge), exp[i])
 
     def testUpdateTcoordFromModel(self):
         ligand = Ligand()

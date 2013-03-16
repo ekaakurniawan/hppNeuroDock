@@ -16,8 +16,9 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import unittest
-from Quaternion import *
-from LFSR import *
+from Quaternion import Quaternion
+from Axis3 import Axis3
+from LFSR import LFSR
 
 class QuaternionTestInit(unittest.TestCase):
     def testInit(self):

@@ -16,9 +16,9 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import unittest
-from Ligand import *
-from Grid import *
-from Parameters import Field
+from Ligand import Ligand
+from Protein import Protein
+from Grid import Grid, Field
 from Map import ElectrostaticMap, DesolvationMap, AtomTypeMap
 from Dock import Dock
 
@@ -39,9 +39,11 @@ class DockCalcLinInterp3(unittest.TestCase):
         grid.maps['NA'] = AtomTypeMap("./Maps/hsg1_rigid.NA.map", grid.field).map
         grid.maps['OA'] = AtomTypeMap("./Maps/hsg1_rigid.OA.map", grid.field).map
 
+        protein = Protein()
+
         u0, v0, w0, u1, v1, w1, \
             p000, p001, p010, p011, p100, p101, p110, p111 = \
-            Dock.calc_linInterp3(grid, ligand)
+            Dock.calc_linInterp3(grid, ligand, protein)
 
         exp_u0 = [24, 27, 30, 33, 33, 36, 28, 24, 22, 29, 29, 32, 32, 35, 29, \
                   28, 27, 25, 25, 21, 18, 15, 13, 15, 19, 21, 36, 28, 29, 28, \
@@ -308,7 +310,9 @@ class DockCalcEnergy(unittest.TestCase):
         grid.maps['NA'] = AtomTypeMap("./Maps/hsg1_rigid.NA.map", grid.field).map
         grid.maps['OA'] = AtomTypeMap("./Maps/hsg1_rigid.OA.map", grid.field).map
         
-        dock = Dock(grid, ligand)
+        dock = Dock()
+        dock.ligand = ligand
+        dock.grid = grid
         dock.calc_energy()
 
         exp_elecs = [-0.037623435264000013, -0.11408866126250672, \

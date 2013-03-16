@@ -16,7 +16,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import unittest
-from LFSR import *
+from LFSR import LFSR
 
 class LfsrTestGenerate(unittest.TestCase):
     def testGenerate(self):

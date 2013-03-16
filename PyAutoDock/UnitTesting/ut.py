@@ -19,7 +19,7 @@ import unittest
 
 def suite():
     modules_to_test = ('LFSR_ut', 'Axis3_ut', 'Quaternion_ut', \
-                       'Parameters_ut', 'Map_ut', 'Ligand_ut', 'Dock_ut')
+                       'Grid_ut', 'Map_ut', 'Ligand_ut', 'Dock_ut')
     alltests = unittest.TestSuite()
     for module in map(__import__, modules_to_test):
         alltests.addTest(unittest.findTestCases(module))

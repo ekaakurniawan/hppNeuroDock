@@ -42,19 +42,16 @@ class Axis3(object):
     def __repr__(self):
         return "Axis3: %.4f, %.4f, %.4f" % (self.x, self.y, self.z)
 
-    def __add__(self, move):
-        return Axis3(self.x+move.x, self.y+move.y, self.z+move.z)
+    def __add__(self, other):
+        return Axis3(self.x + other.x, self.y + other.y, self.z + other.z)
     
-    def __sub__(self, move):
-        return Axis3(self.x-move.x, self.y-move.y, self.z-move.z)
+    def __sub__(self, other):
+        return Axis3(self.x - other.x, self.y - other.y, self.z - other.z)
 
-    def transform(self, rot, move):
-        tx=self.x*rot[0]+self.y*rot[3]+self.z*rot[6] + move.x
-        ty=self.x*rot[1]+self.y*rot[4]+self.z*rot[7] + move.y
-        tz=self.x*rot[2]+self.y*rot[5]+self.z*rot[8] + move.z
-        self.x=tx
-        self.y=ty
-        self.z=tz
+    def __isub__(self, other):
+        self.x -= other.x
+        self.y -= other.y
+        self.z -= other.z
         return self
 
     def normalize(self):
@@ -65,4 +62,3 @@ class Axis3(object):
             self.x /= mag_xyz
             self.y /= mag_xyz
             self.z /= mag_xyz
-

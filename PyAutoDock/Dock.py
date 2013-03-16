@@ -16,13 +16,36 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 # References:
-#  - AutoDock 4.2.3 Source Code (trilinterp.cc)
+#  - AutoDock 4.2.3 Source Code (mkTorTree.cc, trilinterp.cc, torNorVec.cc)
 #    http://autodock.scripps.edu
 
+from Ligand import Ligand
+from Protein import Protein
+from Grid import Grid
+from Quaternion import Quaternion
+
+class DockingParameters:
+    def __init__(self):
+        # Calculate Internal Electrostatic Energies Flag
+        self.calc_inter_elec_e = False
+
+    def __repr__(self):
+        ret = ""
+        ret += "Calculate Internal Electrostatic Energies Flag         : %s" % \
+            self.calc_inter_elec_e
+        return ret
+
 class Dock:
-    def __init__(self, grid, ligand):
-        self.grid = grid
-        self.ligand = ligand
+    def __init__(self):
+        self.ligand = Ligand()
+        self.protein = Protein()
+        self.grid = Grid()
+        # Docking Parameters
+        self.dps = DockingParameters()
+        # Sorted ligand and protein branches ascendingly based on number of
+        # atoms in the branch
+        self.sorted_branches = []
+        
         # Electrostatic
         self.elecs = []
         self.elec_total = 0.0
@@ -30,17 +53,74 @@ class Dock:
         self.emaps = []
         self.emap_total = 0.0
 
+    # Rotate rotatable branches/bonds for both ligand and protein.
+    # rotations is expected to be in radian.
+    def rotate_branches(self, rotations):
+        if not self.sorted_branches:
+            for branch in self.ligand.branches:
+                branch.molecule = 'l' # l for ligand
+                self.sorted_branches.append(branch)
+            for branch in self.protein.flex_branches:
+                branch.molecule = 'p' # p for protein
+                self.sorted_branches.append(branch)
+            self.sorted_branches = sorted(self.sorted_branches, \
+                                          key=lambda branch: len(branch.atom_ids))
+
+        q_rotation = Quaternion()
+        rot_i = 0
+        for branch in self.sorted_branches:
+            atoms = []
+            atom_tcoords = []
+            # Get the atoms from either ligand or protein based on branch
+            # molecule information
+            if branch.molecule == 'l':
+                molecule_atoms = self.ligand.atoms
+            else: # 'p'
+                molecule_atoms = self.protein.flex_atoms
+            # Get atom coordinates
+            for atom in molecule_atoms:
+                if atom.id in [branch.anchor_id] + branch.atom_ids:
+                    # Anchor and link atoms are not for rotation
+                    if atom.id == branch.anchor_id:
+                        anchor_tcoord = atom.tcoord
+                        continue
+                    if atom.id == branch.link_id:
+                        link_tcoord = atom.tcoord
+                        continue
+                    atoms.append(atom)
+                    atom_tcoords.append(atom.tcoord - link_tcoord)
+            # Transform
+            q_rotation.set_angle_axis(rotations[rot_i], \
+                                      anchor_tcoord - link_tcoord)
+            new_atom_tcoords = Quaternion.transform(link_tcoord, q_rotation, \
+                                                    atom_tcoords)
+            for i, atom in enumerate(atoms):
+                atom.tcoord = new_atom_tcoords[i]
+
+            rot_i += 1
+
+    # Transform (translate and rotate) ligand root (whole body)
+    def transform_ligand_root(self, translation, rotation):
+        atom_tcoords = self.ligand.get_atom_tcoords()
+        new_atom_tcoords = Quaternion.transform(translation, rotation, \
+                                                atom_tcoords)
+        self.ligand.set_atom_tcoords(new_atom_tcoords)
+
     # 3D Linear Interpolation
     @staticmethod
-    def calc_linInterp3(grid, ligand):
+    def calc_linInterp3(grid, ligand, protein):
         lo_x, lo_y, lo_z = grid.field.lo.xyz
         spacing = grid.field.spacing
-        atom_len = len(ligand.atoms)
+        atom_len = len(ligand.atoms) + len(protein.flex_atoms)
         
         u = []
         v = []
         w = []
         for atom in ligand.atoms:
+            u.append((atom.tcoord.x - lo_x) / spacing)
+            v.append((atom.tcoord.y - lo_y) / spacing)
+            w.append((atom.tcoord.z - lo_z) / spacing)
+        for atom in protein.flex_atoms:
             u.append((atom.tcoord.x - lo_x) / spacing)
             v.append((atom.tcoord.y - lo_y) / spacing)
             w.append((atom.tcoord.z - lo_z) / spacing)
@@ -76,9 +156,9 @@ class Dock:
     def calc_energy(self):
         u0, v0, w0, u1, v1, w1, \
             p000, p001, p010, p011, p100, p101, p110, p111 = \
-            self.calc_linInterp3(self.grid, self.ligand)
+            self.calc_linInterp3(self.grid, self.ligand, self.protein)
 
-        atom_len = len(self.ligand.atoms)
+        atom_len = len(self.ligand.atoms) + len(self.protein.flex_atoms)
                 
         es = [] # Electrostatic
         for i in xrange(atom_len):
@@ -132,7 +212,7 @@ class Dock:
         self.emaps = []
         self.emap_total = 0.0
         for i, atom in enumerate(self.ligand.atoms):
-            self.emap = ms[i] + ds[i] * atom.abs_charge
+            self.emap = ms[i] + ds[i] * abs(atom.charge)
             self.emaps.append(self.emap)
             self.emap_total += self.emap
 
@@ -142,3 +222,14 @@ class Dock:
                 (i + 1, atom.type, \
                  atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
                  self.emaps[i], self.elecs[i])
+        for i, atom in enumerate(self.protein.flex_atoms):
+            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+7.2f | %+7.2f" % \
+                (i + 1, atom.type, \
+                 atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
+                 self.emaps[i], self.elecs[i])
+
+
+#bar - start
+#dpf = DPF("./Parameters/ind.dpf")
+#print dpf.about
+#bar - stop

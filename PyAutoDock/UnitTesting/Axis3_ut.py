@@ -16,7 +16,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import unittest
-from Axis3 import *
+from Axis3 import Axis3
 
 class Axis3TestInit(unittest.TestCase):
     def testInit(self):

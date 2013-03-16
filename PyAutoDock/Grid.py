@@ -19,6 +19,67 @@
 #  - AutoDock 4.2.3 Source Code
 #    http://autodock.scripps.edu
 
+from Axis3 import Axis3
+
+class Field:
+    def __init__(self, filename = None):
+        self.spacing = 0.0
+        self.num_points = Axis3(0, 0, 0)
+        self.num_points1 = Axis3(0, 0, 0)
+        self.center = Axis3(0.0, 0.0, 0.0)
+        self.lo = Axis3(0.0, 0.0, 0.0)
+        self.hi = Axis3(0.0, 0.0, 0.0)
+        if filename:
+            self.read(filename)
+
+    def read(self, filename):
+        p_file = open(filename, 'r')
+
+        # Spacing
+        while True:
+            line = p_file.readline()
+            if line.startswith("#SPACING"):
+                break
+        self.spacing = float(line.split(" ")[1])
+
+        # Number of Elements
+        line = p_file.readline()
+        self.num_points.xyz = [int(element) for element in line.split(" ")[1:4]]
+        # AutoGrid always adds number of elements with one for each dimension
+        # as the center point
+        self.num_points1.xyz = [element + 1 for element in self.num_points.xyz]
+
+        # Center
+        line = p_file.readline()
+        self.center.xyz = [float(center) for center in line.split(" ")[1:4]]
+
+        # Macromolecule
+        line = p_file.readline()
+
+        # Grid Parameter File (gpf)
+        line = p_file.readline()
+
+        p_file.close()
+
+        # Get minimum and maximum value of x, y, and z
+        half_range = (self.num_points.x / 2) * self.spacing
+        self.lo.x = self.center.x - half_range
+        self.hi.x = self.center.x + half_range
+        half_range = (self.num_points.y / 2) * self.spacing
+        self.lo.y = self.center.y - half_range
+        self.hi.y = self.center.y + half_range
+        half_range = (self.num_points.z / 2) * self.spacing
+        self.lo.z = self.center.z - half_range
+        self.hi.z = self.center.z + half_range
+
+    def test_print(self):
+        print "Spacing     : %s" % self.spacing
+        print "nPoints     : %s" % self.num_points.xyz
+        print "nPoints + 1 : %s" % self.num_points1.xyz
+        print "Center      : %s" % self.center.xyz
+        print "Lo          : %s" % self.lo.xyz
+        print "Hi          : %s" % self.hi.xyz
+
 class Grid:
     def __init__(self):
         self.maps = {}

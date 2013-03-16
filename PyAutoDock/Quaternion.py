@@ -20,13 +20,14 @@
 #  - Lecture 9 on Quaternion from Computer Graphics, Fall 2009 by Kenneth Joy
 #    https://itunes.apple.com/us/itunes-u/computer-graphics-fall-2009/id457893733
 #  - http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions
-#  - AutoDock 4.2.3 Source Code
+#  - http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/transforms/index.htm
+#  - AutoDock 4.2.3 Source Code (qmultiply.cc, qtransform.cc)
 #    http://autodock.scripps.edu
 
 
 import math
 import Constants as const
-from Axis3 import *
+from Axis3 import Axis3
 
 # Quaternion: a + bi + cj + dk
 class Quaternion:
@@ -126,40 +127,65 @@ class Quaternion:
         self.c = 0.0
         self.d = 0.0
 
-    def getRot(self):
-        ''' This routine should be credited to Garrett M. Morris, The Scripps Research Institute
-            from the source code of Autodock (qtransform.cc)
-        '''
-        w=self.a
-        x=self.b
-        y=self.c
-        z=self.d
-        tx  = x+x
-        ty  = y+y
-        tz  = z+z
+    # Optimized transformation as in the combination of translation (in 3D axis)
+    # and rotation (in normalized quaternion) applied to all coordinates in
+    # tcoords
+    @staticmethod
+    def transform(translation, rotation, tcoords):
+        a = rotation.a;
+        b = rotation.b;
+        c = rotation.c;
+        d = rotation.d;
+
+        db = b + b
+        dc = c + c
+        dd = d + d
+
+        a_db = a * db
+        a_dc = a * dc
+        a_dd = a * dd
+
+        b_db_i = 1.0 - (b * db)
+
+        c_db = c * db
+        c_dc = c * dc
+        c_dc_i = 1.0 - c_dc
+
+        d_db = d * db
+        d_dc = d * dc
+        d_dd = d * dd
+
+        r_xx = c_dc_i - d_dd
+        r_xy = c_db   + a_dd
+        r_xz = d_db   - a_dc
+        r_yx = c_db   - a_dd
+        r_yy = b_db_i - d_dd
+        r_yz = d_dc   + a_db
+        r_zx = d_db   + a_dc
+        r_zy = d_dc   - a_db
+        r_zz = b_db_i - c_dc
+
+        new_tcoords = []
+        for tcoord in tcoords:
+            x =  tcoord.x * r_xx
+            x += tcoord.y * r_xy
+            x += tcoord.z * r_xz
+            x += translation.x
+
+            y =  tcoord.x * r_yx
+            y += tcoord.y * r_yy
+            y += tcoord.z * r_yz
+            y += translation.y
         
-        twx = w*tx
-        omtxx = 1. - x*tx
-        txy = y*tx
-        txz = z*tx
-        twy = w*ty
-        
-        tyy = y*ty
-        tyz = z*ty
-        twz = w*tz
-        tzz = z*tz
-        
-        out=[]
-        out.append( 1. - tyy - tzz)
-        out.append(      txy - twz)
-        out.append(      txz + twy)
-        out.append(      txy + twz)
-        out.append( omtxx    - tzz)
-        out.append(      tyz - twx)
-        out.append(      txz - twy)
-        out.append(      tyz + twx)
-        out.append( omtxx    - tyy)
-        return out
+            z =  tcoord.x * r_zx
+            z += tcoord.y * r_zy
+            z += tcoord.z * r_zz
+            z += translation.z
+
+            new_tcoord = Axis3(x, y, z)
+            new_tcoords.append(new_tcoord)
+
+        return new_tcoords
 
     # Returns angle and axis
     # By convention, angle is in radians ranging from -pi to pi
@@ -196,9 +222,8 @@ class Quaternion:
         half_angle = angle / 2
         self.a = math.cos(half_angle)
 
-        #axis.normalize()
+        axis.normalize()
         s = math.sin(half_angle)
         self.b = axis.x * s
         self.c = axis.y * s
         self.d = axis.z * s
-

@@ -16,12 +16,12 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import unittest
-from Map import *
-import Parameters
+from Map import ElectrostaticMap, DesolvationMap, AtomTypeMap
+from Grid import Grid, Field
 
 class MapElectrostatic(unittest.TestCase):
     def testRead(self):
-        field = Parameters.Field()
+        field = Field()
         field.read("./Parameters/hsg1_rigid.maps.fld")
         em = ElectrostaticMap()
         em.read("./Maps/hsg1_rigid.e.map", field)
@@ -84,7 +84,7 @@ class MapElectrostatic(unittest.TestCase):
 
 class MapDesolvation(unittest.TestCase):
     def testRead(self):
-        field = Parameters.Field()
+        field = Field()
         field.read("./Parameters/hsg1_rigid.maps.fld")
         em = ElectrostaticMap()
         em.read("./Maps/hsg1_rigid.d.map", field)
@@ -147,7 +147,7 @@ class MapDesolvation(unittest.TestCase):
 
 class MapAtomType(unittest.TestCase):
     def testRead(self):
-        field = Parameters.Field()
+        field = Field()
         field.read("./Parameters/hsg1_rigid.maps.fld")
         em = ElectrostaticMap()
         em.read("./Maps/hsg1_rigid.C.map", field)
