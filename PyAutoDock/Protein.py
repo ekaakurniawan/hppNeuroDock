@@ -26,30 +26,62 @@ class Protein:
     def __init__(self):
         self.flex_atoms = []        # flexible (rotatable) atoms
         self.flex_branches = []     # flexible (rotatable) branches
+        self.roots = []
 
     def read_flex_pdbqt(self, filename):
         with open(filename, 'r') as p_file:
             branch_stack = []
+            current_root = None
+            current_branch = None
+            # Like atom ID, root and branch IDs start from 1.
+            root_id = 1
+            branch_id = 1
             for line in p_file:
-                # HETATM
+                # ATOM
                 if line.startswith("ATOM"):
                     data = line.split()
                     atom_id = int(data[1])
                     tcoord = Axis3(float(data[6]), \
                                    float(data[7]), \
                                    float(data[8]))
-                    atom = Atom(atom_id, data[12], tcoord, float(data[11]))
+                    current_branch = branch_stack[-1]
+                    atom = Atom(atom_id, data[12], tcoord, float(data[11]), \
+                                current_branch)
                     self.flex_atoms.append(atom)
                     # Update atom id into current active branches
+                    # Note: First branch is root but when collecting atoms, it
+                    # is treated as a branch)
                     for branch in branch_stack:
                         branch.atom_ids.append(atom_id)
+                # ROOT
+                elif line.startswith("ROOT"):
+                    branch = Branch(root_id, None, None, [], None, [])
+                    self.roots.append(branch)
+                    # Push root into branch_stack
+                    branch_stack.append(branch)
+                    current_root = branch
+                    root_id += 1
+                # ENDROOT
+                elif line.startswith("ENDROOT"):
+                    branch_stack.pop()
                 # BRANCH
                 elif line.startswith("BRANCH"):
                     anchor_id, link_id = [int(x) for x in line.split()[1:]]
-                    branch = Branch(anchor_id, link_id, [])
+                    # Get parent branch from the stack (which is the last one).
+                    # If it empty, it means this branch directly linked to the
+                    # root.
+                    if not branch_stack:
+                        parent_branch = current_root
+                    else:
+                        parent_branch = branch_stack[-1]
+                    branch = Branch(branch_id, anchor_id, link_id, [], \
+                                    parent_branch, [])
+                    # Now the parent branch has this branch as the child
+                    parent_branch.children.append(branch)
                     self.flex_branches.append(branch)
                     # Push active branch into branch_stack
                     branch_stack.append(branch)
+                    branch_id += 1
                 # ENDBRANCH
                 elif line.startswith("ENDBRANCH"):
                     # Pop inactive branch from branch_stack
@@ -73,11 +105,18 @@ class Protein:
                                                          flex_atom.tcoord.x, \
                                                          flex_atom.tcoord.y, \
                                                          flex_atom.tcoord.z)
-        ret += "\nBranch Information:\n"
+        ret += "\nRoots Information:\n"
+        for root in self.roots:
+            ret += "%2s: %2s - %2s %s\n" % (root.id, \
+                                            root.anchor_id, \
+                                            root.link_id, \
+                                            root.atom_ids)
+        ret += "\nBranches Information:\n"
         for flex_branch in self.flex_branches:
-            ret += "%2s - %2s %s\n" % (flex_branch.anchor_id, \
-                                       flex_branch.link_id, \
-                                       flex_branch.atom_ids)
+            ret += "%2s: %2s - %2s %s\n" % (flex_branch.id, \
+                                            flex_branch.anchor_id, \
+                                            flex_branch.link_id, \
+                                            flex_branch.atom_ids)
         return ret
 
 #bar - start

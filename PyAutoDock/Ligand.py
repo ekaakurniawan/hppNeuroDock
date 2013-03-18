@@ -26,12 +26,16 @@ class Ligand:
     def __init__(self):
         self.atoms = []
         self.branches = []
+        self.root = None
         # Central rotation point of ligand
         self.about = Axis3(0.0, 0.0, 0.0)
 
     def read_pdbqt(self, filename):
         with open(filename, 'r') as p_file:
             branch_stack = []
+            current_branch = None
+            # Like atom ID, branch ID starts from 1.
+            branch_id = 1
             for line in p_file:
                 # HETATM
                 if line.startswith("HETATM"):
@@ -40,18 +44,43 @@ class Ligand:
                     tcoord = Axis3(float(data[6]), \
                                    float(data[7]), \
                                    float(data[8]))
-                    atom = Atom(atom_id, data[12], tcoord, float(data[11]))
+                    current_branch = branch_stack[-1]
+                    atom = Atom(atom_id, data[12], tcoord, float(data[11]), \
+                                current_branch)
                     self.atoms.append(atom)
                     # Update atom id into current active branches
+                    # Note: First branch is root but when collecting atoms, it
+                    # is treated as a branch)
                     for branch in branch_stack:
                         branch.atom_ids.append(atom_id)
+                # ROOT
+                elif line.startswith("ROOT"):
+                    # Ligand has only one root. Always set the ID to 1.
+                    branch = Branch(1, None, None, [], None, [])
+                    self.root = branch
+                    # Push root into branch_stack
+                    branch_stack.append(branch)
+                # ENDROOT
+                elif line.startswith("ENDROOT"):
+                    branch_stack.pop()
                 # BRANCH
                 elif line.startswith("BRANCH"):
                     anchor_id, link_id = [int(x) for x in line.split()[1:]]
-                    branch = Branch(anchor_id, link_id, [])
+                    # Get parent branch from the stack (which is the last one).
+                    # If it empty, it means this branch directly linked to the
+                    # root.
+                    if not branch_stack:
+                        parent_branch = self.root
+                    else:
+                        parent_branch = branch_stack[-1]
+                    branch = Branch(branch_id, anchor_id, link_id, [], \
+                                    parent_branch, [])
+                    # Now the parent branch has this branch as the child
+                    parent_branch.children.append(branch)
                     self.branches.append(branch)
                     # Push active branch into branch_stack
                     branch_stack.append(branch)
+                    branch_id += 1
                 # ENDBRANCH
                 elif line.startswith("ENDBRANCH"):
                     # Pop inactive branch from branch_stack
@@ -85,11 +114,16 @@ class Ligand:
                                                          atom.tcoord.x, \
                                                          atom.tcoord.y, \
                                                          atom.tcoord.z)
-        ret += "\nBranch Information:\n"
+        ret += "\nRoot Information:\n"
+        ret += "%2s - %2s %s\n" % (self.root.anchor_id, \
+                                   self.root.link_id, \
+                                   self.root.atom_ids)
+        ret += "\nBranches Information:\n"
         for branch in self.branches:
-            ret += "%2s - %2s %s\n" % (branch.anchor_id, \
-                                       branch.link_id, \
-                                       branch.atom_ids)
+            ret += "%2s: %2s - %2s %s\n" % (branch.id, \
+                                            branch.anchor_id, \
+                                            branch.link_id, \
+                                            branch.atom_ids)
         return ret
 
 #bar - start

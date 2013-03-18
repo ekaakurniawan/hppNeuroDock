@@ -23,6 +23,7 @@ from Ligand import Ligand
 from Protein import Protein
 from Grid import Grid
 from Quaternion import Quaternion
+from Atom import Bond
 
 class DockingParameters:
     def __init__(self):
@@ -40,6 +41,7 @@ class Dock:
         self.ligand = Ligand()
         self.protein = Protein()
         self.grid = Grid()
+        self.bond = Bond()
         # Docking Parameters
         self.dps = DockingParameters()
         # Sorted ligand and protein branches ascendingly based on number of
@@ -153,6 +155,8 @@ class Dock:
         return u0, v0, w0, u1, v1, w1, \
                p000, p001, p010, p011, p100, p101, p110, p111
 
+    #TODO: Exclude anchor and link atoms at each branch for intermolecular
+    #      energy calculation
     def calc_energy(self):
         u0, v0, w0, u1, v1, w1, \
             p000, p001, p010, p011, p100, p101, p110, p111 = \

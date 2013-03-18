@@ -25,6 +25,7 @@ from Map import ElectrostaticMap, DesolvationMap, AtomTypeMap
 from Axis3 import Axis3
 from Quaternion import Quaternion
 from Constants import DEG2RAD
+from Atom import Bond
 
 class AutoDock:
     def __init__(self, docking_parameter_file = None):
@@ -44,7 +45,7 @@ class AutoDock:
             for line in p_file:
                 if line.startswith("intelec"):
                     self.dock.dps.calc_inter_elec_e = True
-            
+
                 if line.startswith("fld"):
                     self.grid_field_file = "./Parameters/" + line.split()[1]
                     self.dock.grid.field = Field(self.grid_field_file)
@@ -84,6 +85,11 @@ class AutoDock:
                     for i in xrange(len(self.dock.ligand.atoms)):
                         self.dock.ligand.atoms[i].tcoord -= about
 
+                if line.startswith("include_1_4_interactions"):
+                    # By default, 1-4 interactions is disabled. Only 1-1, 1-2,
+                    # and 1-3 interactions are considered.
+                    self.dock.bond.include_1_4_interactions = True
+
                 if line.startswith("ga_run"):
                     branch_rotations = [DEG2RAD * x \
                                         for x in [-122.13, -179.41, \
@@ -103,8 +109,57 @@ class AutoDock:
                     #print self.atom_type_map_files #bar
                     #print self.dock.grid.maps #bar
 
+                    minmax_distance = self.dock.bond.calc_minmax_distance()
+                    ligand_bond_matrix = self.dock.bond.construct_bond_matrix(self.dock.ligand.atoms, minmax_distance)
+                    protein_bond_matrix = self.dock.bond.construct_bond_matrix(self.dock.protein.flex_atoms, minmax_distance)
+                    # Before combining ligand and protein bond matrices, shift
+                    # protein ids by protein start index (p_idx)
+                    p_idx = len(self.dock.ligand.atoms)
+                    for ids in protein_bond_matrix:
+                        for i, id in enumerate(ids):
+                            ids[i] = id + p_idx
+                    bond_matrix = ligand_bond_matrix
+                    bond_matrix += protein_bond_matrix
+                    #bar - start
+                    print "Total Ligand and Protein Flexible Atoms: %s" % len(bond_matrix)
+                    for i in xrange(len(bond_matrix)):
+                        print bond_matrix[i]
+                    #bar - stop
+                    non_bond_matrix = self.dock.bond.construct_non_bond_matrix(bond_matrix)
+                    #bar - start
+                    print "\nnon_bond_matrix - 1-1, 1-2, 1-3, 1-4 interactions:"
+                    for i in xrange(len(non_bond_matrix)):
+                        res = ""
+                        for j in xrange(len(non_bond_matrix)):
+                            res += "%s" % non_bond_matrix[i][j]
+                        print "%s" % res
+                    #bar - stop
+                    print self.dock.ligand #bar
+                    print self.dock.protein #bar
+                    non_bond_matrix = self.dock.bond.weed_bond(non_bond_matrix, self.dock.ligand, self.dock.protein)
+                    #bar - start
+                    print "\nnon_bond_matrix - weeding rigidly bonded root atoms:"
+                    for i in xrange(len(non_bond_matrix)):
+                        res = ""
+                        for j in xrange(len(non_bond_matrix)):
+                            res += "%s" % non_bond_matrix[i][j]
+                        print "%s" % res
+                    #bar - stop
+
+                    #bar - start
+                    print "\nnon_bond_matrix - FINAL:"
+                    for i in xrange(len(non_bond_matrix)):
+                        res = "%2s  " % (i + 1)
+                        for j in xrange(len(non_bond_matrix)):
+                            if non_bond_matrix[i][j]:
+                                res += "|X"
+                            else:
+                                res += "|_"
+                        print "%s" % res
+                    #bar - stop
+
                     self.dock.calc_energy()
-                    self.dock.test_print() #bar
+                    #self.dock.test_print() #bar
 
 #bar - start
 docking_parameter_file = "./Parameters/ind.dpf"

@@ -16,39 +16,63 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 # References:
-#  - AutoDock 4.2.3 Source Code (mdist.h)
+#  - AutoDock 4.2.3 Source Code (mdist.h, nonbonds.cc, weedbonds.cc)
 #    http://autodock.scripps.edu
 
+import math
 from Axis3 import Axis3
 
 class Atom:
-    NUM_SUPPORTED_ATOM = 7
-    C, N, O, H, XX, P, S = range(NUM_SUPPORTED_ATOM)
+    # For atom type, please refer to bond_index column inside AD4.1_bound.dat
+    # or AD4_parameters.dat file
+    NUM_ATOM_TYPE = 7
+    C, N, O, H, XX, P, S = range(NUM_ATOM_TYPE)
+    ATOM_TYPE = {'C' : C,
+                 'A' : 0,
+                 'N' : N,
+                 'NA': 1,
+                 'O' : O,
+                 'OA': 2,
+                 'H' : H,
+                 'HD': 3,
+                 'XX': XX,
+                 'P' : P,
+                 'S' : S}
 
     def __init__(self, id = 0, type = "?", tcoord = Axis3(0.0, 0.0, 0.0), \
-                 charge = 0.0):
+                 charge = 0.0, branch = None):
         self.id = id
         self.type = type
         self.tcoord = tcoord
         self.charge = charge
+        self.branch = branch
 
 class Branch:
-    def __init__(self, anchor_id = 0, link_id = 0, atom_ids = []):
+    def __init__(self, id = 0, anchor_id = 0, link_id = 0, atom_ids = [], \
+                 parent = None, children = []):
+        self.id = id
+        # Atom ID at parent branch
         self.anchor_id = anchor_id
+        # Atom ID links to anchor atom
         self.link_id = link_id
+        # Atom IDs in the branch except anchor and link atoms
         self.atom_ids = atom_ids
+        # Parent and child branches of this branch
+        self.parent = parent
+        self.children = children
 
+# Atomic Bond
 class Bond:
     DISTANCE_TOLERANCE = 0.1
 
     def __init__(self):
-        pass
+        # By default, 1-4 interactions is disabled
+        self.include_1_4_interactions = False
 
-    # Get minimum to maximum range of atom to atom distance
-    @staticmethod
-    def get_minmax_distance():
-        minmax_distance = [[[0, 0] for x in xrange(Atom.NUM_SUPPORTED_ATOM)] \
-                           for x in xrange(Atom.NUM_SUPPORTED_ATOM)]
+    # Get natural observation of the bonding range of atom to atom distance
+    def calc_minmax_distance(self):
+        minmax_distance = [[[0, 0] for x in xrange(Atom.NUM_ATOM_TYPE)] \
+                           for x in xrange(Atom.NUM_ATOM_TYPE)]
 
         def set_minmax_distance(atom1, atom2, val):
             minmax_distance[atom1][atom2][0] = val[0] - Bond.DISTANCE_TOLERANCE
@@ -90,17 +114,128 @@ class Bond:
 
         return minmax_distance
 
-    # Construct atom-to-atom covalent bond matrix
-    @staticmethod
-    def construct_bond_matrix():
-        pass
+    # Construct atom-to-atom bonding matrix based on their distance for ligand
+    # and protein individually
+    def construct_bond_matrix(self, atoms, minmax_distance):
+        total_atoms = len(atoms)
+        # Construct an array of integer atom type from character atom type
+        atom_types = []
+        for i in xrange(total_atoms):
+            atom_types.append(Atom.ATOM_TYPE[atoms[i].type])
 
-    # Construct atom-to-atom non-covalent bond matrix by considering 1-1, 1-2,
-    # 1-3 and 1-4 interactions
-    @staticmethod
-    def construct_non_bond_matrix():
-        pass
+        bond_matrix = [[] for i in xrange(total_atoms)]
+        distances = [[] for i in xrange(total_atoms)]
+        for i in xrange(total_atoms - 1):
+            # Calculate atom-to-atom distance
+            for j in xrange(i + 1, total_atoms):
+                dx = atoms[i].tcoord.x - atoms[j].tcoord.x
+                dy = atoms[i].tcoord.y - atoms[j].tcoord.y
+                dz = atoms[i].tcoord.z - atoms[j].tcoord.z
+                distances[j] = math.sqrt((dx * dx) + (dy * dy) + (dz * dz))
+            #print distances #bar
+            #print len(distances) #bar
+            sorted_idx = range(i + 1)
+            sorted_idx += sorted(range(i + 1, total_atoms), \
+                                 key=lambda k: distances[k])
+            #print sorted_idx #bar
+            #print len(sorted_idx) #bar
+            #print total_atoms #bar
 
-#bar - start
-#print Bond.get_minmax_distance()
-#bar - stop
+            # Scan from the shortest atom-to-atom distance and check if it
+            # within tolerable bonding range
+            for j in xrange(i + 1, total_atoms):
+                k = sorted_idx[j]
+                distance = distances[k]
+                min_distance = minmax_distance[atom_types[i]][atom_types[i]][0]
+                max_distance = minmax_distance[atom_types[i]][atom_types[i]][1]
+                if (distance >= min_distance) and (distance <= max_distance):
+                    bond_matrix[i].append(j)
+                    bond_matrix[j].append(i)
+
+        return bond_matrix
+
+    # Construct atom-to-atom non-bonding matrix by considering 1-1, 1-2, 1-3
+    # and/or 1-4 interactions for both ligand and protein
+    def construct_non_bond_matrix(self, bond_matrix):
+        total_atoms = len(bond_matrix)
+        # Set initial non-bonding matrix values all to 1. As the detection
+        # progressing, they will be set to:
+        #  - 0 to be ignored (bonded), or to
+        #  - 4 for another type of non-bonding atoms, 1-4 interactions
+        non_bond_matrix = [[1 for i in xrange(total_atoms)] \
+                           for j in xrange(total_atoms)]
+
+        # If we include 1-4 interactions, mark them separately (4) otherwise
+        # mark them as the rest, which is 0
+        if self.include_1_4_interactions:
+            mark_1_4 = 4
+        else:
+            mark_1_4 = 0
+        # 1-1, 1-2, 1-3 and 1-4 interactions
+        for i in xrange(total_atoms):
+            non_bond_matrix[i][i] = 0                       # 1-1 interactions
+            for j in bond_matrix[i]:
+                non_bond_matrix[i][j] = 0                   # 1-2 interactions
+                non_bond_matrix[j][i] = 0
+                for k in bond_matrix[j]:
+                    non_bond_matrix[i][k] = 0               # 1-3 interactions
+                    non_bond_matrix[k][i] = 0
+                    for l in bond_matrix[k]:
+                        non_bond_matrix[i][l] = mark_1_4    # 1-4 interactions
+                        non_bond_matrix[l][i] = mark_1_4
+
+        return non_bond_matrix
+
+    # For internal energy calculation, weed out:
+    # - rigidly bonded root atoms
+    # - anchor-link atoms
+    # - between link atoms that are connected to the same parent branch and
+    #   link atom with all atoms at the parent branch (considered to be 1-3
+    #   interactions)
+    # Applicable for both ligand and protein.
+    def weed_bond(self, non_bond_matrix, ligand, protein):
+        # Starting index for protein atom IDs
+        p_idx = len(ligand.atoms)
+        
+        # Weed out rigidly bonded root atoms
+        for atom_id_i in ligand.root.atom_ids:
+            for atom_id_j in ligand.root.atom_ids:
+                non_bond_matrix[atom_id_i - 1][atom_id_j - 1] = 0
+        for root in protein.roots:
+            for atom_id_i in root.atom_ids:
+                for atom_id_j in root.atom_ids:
+                    non_bond_matrix[p_idx + atom_id_i - 1] \
+                                   [p_idx + atom_id_j - 1] = 0
+
+        # Weed out anchor-link atoms
+        for branch in ligand.branches:
+            non_bond_matrix[branch.link_id - 1][branch.anchor_id - 1] = 0
+        for branch in protein.flex_branches:
+            non_bond_matrix[p_idx + branch.link_id - 1] \
+                           [p_idx + branch.anchor_id - 1] = 0
+
+        # Weed out between link atoms that are connected to the same parent
+        # branch and link atom with all atoms at the parent branch (considered
+        # to be 1-3 interactions)
+        for branch1 in ligand.branches:
+            for branch2 in ligand.branches:
+                if branch1.parent.id == branch2.parent.id:
+                    non_bond_matrix[branch1.link_id - 1] \
+                                   [branch2.link_id - 1] = 0
+            for atom in ligand.atoms:
+                if (atom.branch.id == branch1.parent.id):
+                    non_bond_matrix[atom.id - 1][branch1.link_id - 1] = 0
+                    non_bond_matrix[branch1.link_id - 1][atom.id - 1] = 0
+        for branch1 in protein.flex_branches:
+            for branch2 in protein.flex_branches:
+                if branch1.parent.id == branch2.parent.id:
+                    non_bond_matrix[p_idx + branch1.link_id - 1] \
+                                   [p_idx + branch2.link_id - 1] = 0
+            for atom in protein.flex_atoms:
+                if (atom.branch.id == branch1.parent.id):
+                    non_bond_matrix[p_idx + atom.id - 1] \
+                                   [p_idx + branch1.link_id - 1] = 0
+                    non_bond_matrix[p_idx + branch1.link_id - 1] \
+                                   [p_idx + atom.id - 1] = 0
+
+        return non_bond_matrix
