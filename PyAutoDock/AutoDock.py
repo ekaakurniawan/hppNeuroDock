@@ -109,6 +109,9 @@ class AutoDock:
                     #print self.atom_type_map_files #bar
                     #print self.dock.grid.maps #bar
 
+                    print self.dock.ligand #bar
+                    print self.dock.protein #bar
+
                     minmax_distance = self.dock.bond.calc_minmax_distance()
                     ligand_bond_matrix = self.dock.bond.construct_bond_matrix(self.dock.ligand.atoms, minmax_distance)
                     protein_bond_matrix = self.dock.bond.construct_bond_matrix(self.dock.protein.flex_atoms, minmax_distance)
@@ -125,7 +128,9 @@ class AutoDock:
                     for i in xrange(len(bond_matrix)):
                         print bond_matrix[i]
                     #bar - stop
-                    non_bond_matrix = self.dock.bond.construct_non_bond_matrix(bond_matrix)
+                            
+                    non_bond_matrix = self.dock.bond.construct_non_bond_matrix(len(bond_matrix))
+                    non_bond_matrix = self.dock.bond.weed_covalent_bond(bond_matrix, non_bond_matrix)
                     #bar - start
                     print "\nnon_bond_matrix - 1-1, 1-2, 1-3, 1-4 interactions:"
                     for i in xrange(len(non_bond_matrix)):
@@ -134,11 +139,20 @@ class AutoDock:
                             res += "%s" % non_bond_matrix[i][j]
                         print "%s" % res
                     #bar - stop
-                    print self.dock.ligand #bar
-                    print self.dock.protein #bar
-                    non_bond_matrix = self.dock.bond.weed_bond(non_bond_matrix, self.dock.ligand, self.dock.protein)
+                            
+                    non_bond_matrix = self.dock.bond.weed_rigid_bond(non_bond_matrix, self.dock.ligand, self.dock.protein)
                     #bar - start
                     print "\nnon_bond_matrix - weeding rigidly bonded root atoms:"
+                    for i in xrange(len(non_bond_matrix)):
+                        res = ""
+                        for j in xrange(len(non_bond_matrix)):
+                            res += "%s" % non_bond_matrix[i][j]
+                        print "%s" % res
+                    #bar - stop
+
+                    non_bond_matrix = self.dock.bond.weed_molecular_bond(non_bond_matrix, self.dock.ligand, self.dock.protein)
+                    #bar - start
+                    print "\nnon_bond_matrix - weeding intra and intermolecular bond:"
                     for i in xrange(len(non_bond_matrix)):
                         res = ""
                         for j in xrange(len(non_bond_matrix)):

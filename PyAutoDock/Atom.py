@@ -18,6 +18,8 @@
 # References:
 #  - AutoDock 4.2.3 Source Code (mdist.h, nonbonds.cc, weedbonds.cc)
 #    http://autodock.scripps.edu
+#  - Covalent Radius
+#    http://en.wikipedia.org/wiki/Covalent_radius
 
 import math
 from Axis3 import Axis3
@@ -69,7 +71,8 @@ class Bond:
         # By default, 1-4 interactions is disabled
         self.include_1_4_interactions = False
 
-    # Get natural observation of the bonding range of atom to atom distance
+    # Get natural observation of the covalent bonding range of atom to atom
+    # distance
     def calc_minmax_distance(self):
         minmax_distance = [[[0, 0] for x in xrange(Atom.NUM_ATOM_TYPE)] \
                            for x in xrange(Atom.NUM_ATOM_TYPE)]
@@ -114,8 +117,8 @@ class Bond:
 
         return minmax_distance
 
-    # Construct atom-to-atom bonding matrix based on their distance for ligand
-    # and protein individually
+    # Construct atom-to-atom covalent bonding matrix based on their distance for
+    # ligand and protein individually
     def construct_bond_matrix(self, atoms, minmax_distance):
         total_atoms = len(atoms)
         # Construct an array of integer atom type from character atom type
@@ -154,16 +157,20 @@ class Bond:
 
         return bond_matrix
 
-    # Construct atom-to-atom non-bonding matrix by considering 1-1, 1-2, 1-3
-    # and/or 1-4 interactions for both ligand and protein
-    def construct_non_bond_matrix(self, bond_matrix):
-        total_atoms = len(bond_matrix)
+    # Construct atom-to-atom non-bonding matrix
+    def construct_non_bond_matrix(self, total_atoms):
         # Set initial non-bonding matrix values all to 1. As the detection
         # progressing, they will be set to:
         #  - 0 to be ignored (bonded), or to
         #  - 4 for another type of non-bonding atoms, 1-4 interactions
         non_bond_matrix = [[1 for i in xrange(total_atoms)] \
                            for j in xrange(total_atoms)]
+        return non_bond_matrix
+
+    # Weed out covalent bond by considering 1-1, 1-2, 1-3 and/or 1-4
+    # interactions
+    def weed_covalent_bond(self, bond_matrix, non_bond_matrix):
+        total_atoms = len(bond_matrix)
 
         # If we include 1-4 interactions, mark them separately (4) otherwise
         # mark them as the rest, which is 0
@@ -189,11 +196,10 @@ class Bond:
     # For internal energy calculation, weed out:
     # - rigidly bonded root atoms
     # - anchor-link atoms
-    # - between link atoms that are connected to the same parent branch and
-    #   link atom with all atoms at the parent branch (considered to be 1-3
-    #   interactions)
+    # - link atoms in a same rigid body. Also, weed out link atom and the atoms
+    #   in a same rigid body. These are considered 1-3 interactions.
     # Applicable for both ligand and protein.
-    def weed_bond(self, non_bond_matrix, ligand, protein):
+    def weed_rigid_bond(self, non_bond_matrix, ligand, protein):
         # Starting index for protein atom IDs
         p_idx = len(ligand.atoms)
         
@@ -242,4 +248,7 @@ class Bond:
                     non_bond_matrix[p_idx + branch1.link_id - 1] \
                                    [p_idx + atom.id - 1] = 0
 
+        return non_bond_matrix
+
+    def weed_molecular_bond(self, non_bond_matrix, ligand, protein):
         return non_bond_matrix
