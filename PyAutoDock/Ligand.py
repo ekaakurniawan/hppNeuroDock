@@ -52,14 +52,16 @@ class Ligand:
                     # Note: First branch is root but when collecting atoms, it
                     # is treated as a branch)
                     for branch in branch_stack:
-                        branch.atom_ids.append(atom_id)
+                        if atom_id != branch.link_id:
+                            branch.atom_ids.append(atom_id)
                 # ROOT
                 elif line.startswith("ROOT"):
                     # Ligand has only one root. Always set the ID to 1.
-                    branch = Branch(1, None, None, [], None, [])
+                    branch = Branch(branch_id, None, None, [], None, [])
                     self.root = branch
                     # Push root into branch_stack
                     branch_stack.append(branch)
+                    branch_id += 1
                 # ENDROOT
                 elif line.startswith("ENDROOT"):
                     branch_stack.pop()
@@ -109,15 +111,24 @@ class Ligand:
     def __repr__(self):
         ret = "Atoms:\n"
         for atom in self.atoms:
-            ret += "%2s: %2s - %8.3f, %8.3f, %8.3f\n" % (atom.id, \
-                                                         atom.type, \
-                                                         atom.tcoord.x, \
-                                                         atom.tcoord.y, \
-                                                         atom.tcoord.z)
+            branch_parent_id = None
+            try:
+                branch_parent_id = atom.branch.parent.id
+            except:
+                pass
+            ret += "%2s: %2s - %8.3f, %8.3f, %8.3f %4s %2s\n" % \
+                   (atom.id, \
+                    atom.type, \
+                    atom.tcoord.x, \
+                    atom.tcoord.y, \
+                    atom.tcoord.z,
+                    branch_parent_id, \
+                    atom.branch.id)
         ret += "\nRoot Information:\n"
-        ret += "%2s - %2s %s\n" % (self.root.anchor_id, \
-                                   self.root.link_id, \
-                                   self.root.atom_ids)
+        ret += "%2s: %2s - %2s %s\n" % (self.root.id, \
+                                        self.root.anchor_id, \
+                                        self.root.link_id, \
+                                        self.root.atom_ids)
         ret += "\nBranches Information:\n"
         for branch in self.branches:
             ret += "%2s: %2s - %2s %s\n" % (branch.id, \

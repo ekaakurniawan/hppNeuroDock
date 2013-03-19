@@ -214,9 +214,13 @@ class Bond:
             non_bond_matrix[p_idx + branch.link_id - 1] \
                            [p_idx + branch.anchor_id - 1] = 0
 
-        # Weed out between link atoms that are connected to the same parent
-        # branch and link atom with all atoms at the parent branch (considered
-        # to be 1-3 interactions)
+        # Weed out link atoms in a same rigid body. Also, weed out link atom and
+        # the atoms in a same rigid body.
+        # These are considered 1-3 interactions.
+        # Note: - Rigid body for a link atom is the parent branch as they are
+        #         stick together
+        #       - Rigid body of the rest of the atoms (except link atom) is the
+        #         the branch they attach to
         for branch1 in ligand.branches:
             for branch2 in ligand.branches:
                 if branch1.parent.id == branch2.parent.id:

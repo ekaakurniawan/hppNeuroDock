@@ -81,7 +81,8 @@ class Dock:
                 molecule_atoms = self.protein.flex_atoms
             # Get atom coordinates
             for atom in molecule_atoms:
-                if atom.id in [branch.anchor_id] + branch.atom_ids:
+                if atom.id in [branch.anchor_id] + [branch.link_id] + \
+                              branch.atom_ids:
                     # Anchor and link atoms are not for rotation
                     if atom.id == branch.anchor_id:
                         anchor_tcoord = atom.tcoord

@@ -34,7 +34,6 @@ class Protein:
             current_root = None
             current_branch = None
             # Like atom ID, root and branch IDs start from 1.
-            root_id = 1
             branch_id = 1
             for line in p_file:
                 # ATOM
@@ -52,15 +51,16 @@ class Protein:
                     # Note: First branch is root but when collecting atoms, it
                     # is treated as a branch)
                     for branch in branch_stack:
-                        branch.atom_ids.append(atom_id)
+                        if atom_id != branch.link_id:
+                            branch.atom_ids.append(atom_id)
                 # ROOT
                 elif line.startswith("ROOT"):
-                    branch = Branch(root_id, None, None, [], None, [])
+                    branch = Branch(branch_id, None, None, [], None, [])
                     self.roots.append(branch)
                     # Push root into branch_stack
                     branch_stack.append(branch)
                     current_root = branch
-                    root_id += 1
+                    branch_id += 1
                 # ENDROOT
                 elif line.startswith("ENDROOT"):
                     branch_stack.pop()
@@ -100,11 +100,19 @@ class Protein:
     def __repr__(self):
         ret = "Flexible (Rotatable) Atoms:\n"
         for flex_atom in self.flex_atoms:
-            ret += "%2s: %2s - %8.3f, %8.3f, %8.3f\n" % (flex_atom.id, \
-                                                         flex_atom.type, \
-                                                         flex_atom.tcoord.x, \
-                                                         flex_atom.tcoord.y, \
-                                                         flex_atom.tcoord.z)
+            branch_parent_id = None
+            try:
+                branch_parent_id = flex_atom.branch.parent.id
+            except:
+                pass
+            ret += "%2s: %2s - %8.3f, %8.3f, %8.3f %4s %2s\n" % \
+                (flex_atom.id, \
+                 flex_atom.type, \
+                 flex_atom.tcoord.x, \
+                 flex_atom.tcoord.y, \
+                 flex_atom.tcoord.z,
+                 branch_parent_id, \
+                 flex_atom.branch.id)
         ret += "\nRoots Information:\n"
         for root in self.roots:
             ret += "%2s: %2s - %2s %s\n" % (root.id, \
