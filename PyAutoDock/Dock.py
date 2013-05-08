@@ -164,7 +164,7 @@ class Dock:
             self.calc_linInterp3(self.grid, self.ligand, self.protein)
 
         atom_len = len(self.ligand.atoms) + len(self.protein.flex_atoms)
-                
+
         es = [] # Electrostatic
         for i in xrange(atom_len):
             e = 0.0

@@ -53,11 +53,13 @@ class Ligand:
                     # is treated as a branch)
                     for branch in branch_stack:
                         if atom_id != branch.link_id:
-                            branch.atom_ids.append(atom_id)
+                            branch.all_atom_ids.append(atom_id)
+                    if atom_id != branch_stack[-1].link_id:
+                        branch_stack[-1].atom_ids.append(atom_id)
                 # ROOT
                 elif line.startswith("ROOT"):
                     # Ligand has only one root. Always set the ID to 1.
-                    branch = Branch(branch_id, None, None, [], None, [])
+                    branch = Branch(branch_id, None, None, [], [], None, [])
                     self.root = branch
                     # Push root into branch_stack
                     branch_stack.append(branch)
@@ -76,7 +78,7 @@ class Ligand:
                     else:
                         parent_branch = branch_stack[-1]
                     branch = Branch(branch_id, anchor_id, link_id, [], \
-                                    parent_branch, [])
+                                    [], parent_branch, [])
                     # Now the parent branch has this branch as the child
                     parent_branch.children.append(branch)
                     self.branches.append(branch)
@@ -135,6 +137,7 @@ class Ligand:
                                             branch.anchor_id, \
                                             branch.link_id, \
                                             branch.atom_ids)
+            ret += "    %s\n" % (branch.all_atom_ids)
         return ret
 
 #bar - start

@@ -51,7 +51,7 @@ class Atom:
 
 class Branch:
     def __init__(self, id = 0, anchor_id = 0, link_id = 0, atom_ids = [], \
-                 parent = None, children = []):
+                 all_atom_ids = [], parent = None, children = []):
         self.id = id
         # Atom ID at parent branch
         self.anchor_id = anchor_id
@@ -59,6 +59,9 @@ class Branch:
         self.link_id = link_id
         # Atom IDs in the branch except anchor and link atoms
         self.atom_ids = atom_ids
+        # All atom IDs in the branch except anchor and link atoms; and atom IDs
+        # of all sub-branches
+        self.all_atom_ids = all_atom_ids
         # Parent and child branches of this branch
         self.parent = parent
         self.children = children
@@ -135,14 +138,9 @@ class Bond:
                 dy = atoms[i].tcoord.y - atoms[j].tcoord.y
                 dz = atoms[i].tcoord.z - atoms[j].tcoord.z
                 distances[j] = math.sqrt((dx * dx) + (dy * dy) + (dz * dz))
-            #print distances #bar
-            #print len(distances) #bar
             sorted_idx = range(i + 1)
             sorted_idx += sorted(range(i + 1, total_atoms), \
                                  key=lambda k: distances[k])
-            #print sorted_idx #bar
-            #print len(sorted_idx) #bar
-            #print total_atoms #bar
 
             # Scan from the shortest atom-to-atom distance and check if it
             # within tolerable bonding range
@@ -213,6 +211,29 @@ class Bond:
                     non_bond_matrix[p_idx + atom_id_i - 1] \
                                    [p_idx + atom_id_j - 1] = 0
 
+        # Weed out rigidly bonded atoms in a same branch
+        for branch in ligand.branches:
+            for atom_id_i in branch.atom_ids:
+                non_bond_matrix[atom_id_i - 1][branch.anchor_id - 1] = 0
+                non_bond_matrix[branch.anchor_id - 1][atom_id_i - 1] = 0
+                non_bond_matrix[atom_id_i - 1][branch.link_id - 1] = 0
+                non_bond_matrix[branch.link_id - 1][atom_id_i - 1] = 0
+                for atom_id_j in branch.atom_ids:
+                    non_bond_matrix[atom_id_i - 1][atom_id_j - 1] = 0
+        for branch in protein.flex_branches:
+            for atom_id_i in branch.atom_ids:
+                non_bond_matrix[p_idx + atom_id_i - 1] \
+                               [p_idx + branch.anchor_id - 1] = 0
+                non_bond_matrix[p_idx + branch.anchor_id - 1] \
+                               [p_idx + atom_id_i - 1] = 0
+                non_bond_matrix[p_idx + atom_id_i - 1] \
+                               [p_idx + branch.link_id - 1] = 0
+                non_bond_matrix[p_idx + branch.link_id - 1]\
+                               [p_idx + atom_id_i - 1] = 0
+                for atom_id_j in branch.atom_ids:
+                    non_bond_matrix[p_idx + atom_id_i - 1] \
+                                   [p_idx + atom_id_j - 1] = 0
+
         # Weed out anchor-link atoms
         for branch in ligand.branches:
             non_bond_matrix[branch.link_id - 1][branch.anchor_id - 1] = 0
@@ -220,8 +241,8 @@ class Bond:
             non_bond_matrix[p_idx + branch.link_id - 1] \
                            [p_idx + branch.anchor_id - 1] = 0
 
-        # Weed out link atoms in a same rigid body. Also, weed out link atom and
-        # the atoms in a same rigid body.
+        # Weed out link atoms in a same rigid body.
+        # Also, weed out link atom and the atoms in a same rigid body.
         # These are considered 1-3 interactions.
         # Note: - Rigid body for a link atom is the parent branch as they are
         #         stick together

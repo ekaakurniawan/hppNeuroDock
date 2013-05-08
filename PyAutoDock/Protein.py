@@ -52,10 +52,12 @@ class Protein:
                     # is treated as a branch)
                     for branch in branch_stack:
                         if atom_id != branch.link_id:
-                            branch.atom_ids.append(atom_id)
+                            branch.all_atom_ids.append(atom_id)
+                    if atom_id != branch_stack[-1].link_id:
+                        branch_stack[-1].atom_ids.append(atom_id)
                 # ROOT
                 elif line.startswith("ROOT"):
-                    branch = Branch(branch_id, None, None, [], None, [])
+                    branch = Branch(branch_id, None, None, [], [], None, [])
                     self.roots.append(branch)
                     # Push root into branch_stack
                     branch_stack.append(branch)
@@ -75,7 +77,7 @@ class Protein:
                     else:
                         parent_branch = branch_stack[-1]
                     branch = Branch(branch_id, anchor_id, link_id, [], \
-                                    parent_branch, [])
+                                    [], parent_branch, [])
                     # Now the parent branch has this branch as the child
                     parent_branch.children.append(branch)
                     self.flex_branches.append(branch)
@@ -125,6 +127,7 @@ class Protein:
                                             flex_branch.anchor_id, \
                                             flex_branch.link_id, \
                                             flex_branch.atom_ids)
+            ret += "    %s\n" % (flex_branch.all_atom_ids)
         return ret
 
 #bar - start
