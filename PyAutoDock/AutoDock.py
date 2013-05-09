@@ -68,10 +68,12 @@ class AutoDock:
                     self.desolvation_map_file = "./Maps/" + line.split()[1]
                     self.dock.grid.maps['d'] = DesolvationMap(self.desolvation_map_file, self.dock.grid.field).map
 
+                # Set movable molecule (ligand)
                 if line.startswith("move"):
                     self.ligand_file = "./Inputs/" + line.split()[1]
                     self.dock.ligand.read_pdbqt(self.ligand_file)
 
+                # Set flexible portion of molecule (normally protein receptor)
                 if line.startswith("flexres"):
                     self.protein_file = "./Inputs/" + line.split()[1]
                     self.dock.protein.read_flex_pdbqt(self.protein_file)
@@ -176,7 +178,7 @@ class AutoDock:
                     #self.dock.test_print() #bar
 
 #bar - start
-docking_parameter_file = "./Parameters/ind.dpf"
-autoDock = AutoDock(docking_parameter_file)
-autoDock.run()
+#docking_parameter_file = "./Parameters/ind.dpf"
+#autoDock = AutoDock(docking_parameter_file)
+#autoDock.run()
 #bar - stop

@@ -109,6 +109,34 @@ class Dock:
                                                 atom_tcoords)
         self.ligand.set_atom_tcoords(new_atom_tcoords)
 
+    def check_out_of_grid(self):
+        lo_x, lo_y, lo_z = self.grid.field.lo.xyz
+        hi_x, hi_y, hi_z = self.grid.field.hi.xyz
+        for atom in self.ligand.atoms:
+            if (atom.tcoord.x <= lo_x or \
+                atom.tcoord.y <= lo_y or \
+                atom.tcoord.z <= lo_z or \
+                atom.tcoord.x >= hi_x or \
+                atom.tcoord.y >= hi_y or \
+                atom.tcoord.z >= hi_z): return True
+        for atom in self.protein.flex_atoms:
+            if (atom.tcoord.x <= lo_x or \
+                atom.tcoord.y <= lo_y or \
+                atom.tcoord.z <= lo_z or \
+                atom.tcoord.x >= hi_x or \
+                atom.tcoord.y >= hi_y or \
+                atom.tcoord.z >= hi_z): return True
+        return False
+
+    # Set candidate binding mode
+    def set_pose(self, translation, rotation, torsion):
+        self.rotate_branches(torsion)
+        self.transform_ligand_root(translation, rotation)
+        if self.check_out_of_grid():
+            return False
+        else:
+            return True
+
     # 3D Linear Interpolation
     @staticmethod
     def calc_linInterp3(grid, ligand, protein):
@@ -156,6 +184,7 @@ class Dock:
         return u0, v0, w0, u1, v1, w1, \
                p000, p001, p010, p011, p100, p101, p110, p111
 
+    # Calculate free energy
     #TODO: Exclude anchor and link atoms at each branch for intermolecular
     #      energy calculation
     def calc_energy(self):
@@ -221,14 +250,23 @@ class Dock:
             self.emaps.append(self.emap)
             self.emap_total += self.emap
 
+        return self.elecs, self.emaps
+
+    # Return free energy based on molecular pose
+    def energy(self, translation, rotation, torsion):
+        if self.set_pose(translation, rotation, torsion):
+            return self.calc_energy()
+        else:
+            return None, None
+
     def test_print(self):
         for i, atom in enumerate(self.ligand.atoms):
-            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+7.2f | %+7.2f" % \
+            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+9.4f | %+9.4f" % \
                 (i + 1, atom.type, \
                  atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
                  self.emaps[i], self.elecs[i])
         for i, atom in enumerate(self.protein.flex_atoms):
-            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+7.2f | %+7.2f" % \
+            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+9.4f | %+9.4f" % \
                 (i + 1, atom.type, \
                  atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
                  self.emaps[i], self.elecs[i])
