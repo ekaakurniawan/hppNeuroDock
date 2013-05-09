@@ -26,7 +26,7 @@ class Protein:
     def __init__(self):
         self.flex_atoms = []        # flexible (rotatable) atoms
         self.flex_branches = []     # flexible (rotatable) branches
-        self.roots = []
+        self.root = None
 
     def read_flex_pdbqt(self, filename):
         with open(filename, 'r') as p_file:
@@ -57,12 +57,13 @@ class Protein:
                         branch_stack[-1].atom_ids.append(atom_id)
                 # ROOT
                 elif line.startswith("ROOT"):
-                    branch = Branch(branch_id, None, None, [], [], None, [])
-                    self.roots.append(branch)
+                    if self.root == None:
+                        self.root = Branch(branch_id, None, None, [], [], \
+                                           None, [])
+                        branch_id += 1
                     # Push root into branch_stack
-                    branch_stack.append(branch)
-                    current_root = branch
-                    branch_id += 1
+                    branch_stack.append(self.root)
+                    current_root = self.root
                 # ENDROOT
                 elif line.startswith("ENDROOT"):
                     branch_stack.pop()
@@ -115,12 +116,11 @@ class Protein:
                  flex_atom.tcoord.z,
                  branch_parent_id, \
                  flex_atom.branch.id)
-        ret += "\nRoots Information:\n"
-        for root in self.roots:
-            ret += "%2s: %2s - %2s %s\n" % (root.id, \
-                                            root.anchor_id, \
-                                            root.link_id, \
-                                            root.atom_ids)
+        ret += "\nRoot Information:\n"
+        ret += "%2s: %2s - %2s %s\n" % (self.root.id, \
+                                        self.root.anchor_id, \
+                                        self.root.link_id, \
+                                        self.root.atom_ids)
         ret += "\nBranches Information:\n"
         for flex_branch in self.flex_branches:
             ret += "%2s: %2s - %2s %s\n" % (flex_branch.id, \

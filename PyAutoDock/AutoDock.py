@@ -93,24 +93,6 @@ class AutoDock:
                     self.dock.bond.include_1_4_interactions = True
 
                 if line.startswith("ga_run"):
-                    branch_rotations = [DEG2RAD * x \
-                                        for x in [-122.13, -179.41, \
-                                                  -141.59,  177.29, \
-                                                  -179.46, -9.31, \
-                                                    132.37, -89.19, \
-                                                   78.43,   22.22, \
-                                                   71.37,   59.52]]
-                    self.dock.rotate_branches(branch_rotations)
-
-                    root_translation = Axis3(2.056477, 5.846611, -7.245407)
-                    root_rotation = Quaternion(0.532211, 0.379383, 0.612442, 0.444674)
-                    self.dock.transform_ligand_root(root_translation, root_rotation)
-
-                    #print self.dock.ligand #bar
-                    #print self.dock.protein #bar
-                    #print self.atom_type_map_files #bar
-                    #print self.dock.grid.maps #bar
-
                     print self.dock.ligand #bar
                     print self.dock.protein #bar
 
@@ -125,12 +107,7 @@ class AutoDock:
                             ids[i] = id + p_idx
                     bond_matrix = ligand_bond_matrix
                     bond_matrix += protein_bond_matrix
-                    #bar - start
-                    print "Total Ligand and Protein Flexible Atoms: %s" % len(bond_matrix)
-                    for i in xrange(len(bond_matrix)):
-                        print bond_matrix[i]
-                    #bar - stop
-                            
+
                     non_bond_matrix = self.dock.bond.construct_non_bond_matrix(len(bond_matrix))
                     non_bond_matrix = self.dock.bond.weed_covalent_bond(bond_matrix, non_bond_matrix)
                     #bar - start
@@ -152,16 +129,6 @@ class AutoDock:
                         print "%s" % res
                     #bar - stop
 
-                    non_bond_matrix = self.dock.bond.weed_molecular_bond(non_bond_matrix, self.dock.ligand, self.dock.protein)
-                    #bar - start
-                    print "\nnon_bond_matrix - weeding intra and intermolecular bond:"
-                    for i in xrange(len(non_bond_matrix)):
-                        res = ""
-                        for j in xrange(len(non_bond_matrix)):
-                            res += "%s" % non_bond_matrix[i][j]
-                        print "%s" % res
-                    #bar - stop
-
                     #bar - start
                     print "\nnon_bond_matrix - FINAL:"
                     for i in xrange(len(non_bond_matrix)):
@@ -174,11 +141,22 @@ class AutoDock:
                         print "%s" % res
                     #bar - stop
 
-                    self.dock.calc_energy()
-                    #self.dock.test_print() #bar
+
+                    translation = Axis3(2.056477, 5.846611, -7.245407)
+                    rotation = Quaternion(0.532211, 0.379383, 0.612442, 0.444674)
+                    torsion = [DEG2RAD * x for x in [-122.13, -179.41, \
+                                                     -141.59,  177.29, \
+                                                     -179.46,   -9.31, \
+                                                      132.37,  -89.19, \
+                                                       78.43,   22.22, \
+                                                       71.37,   59.52]]
+                    if self.dock.set_pose(translation, rotation, torsion):
+                        self.dock.calc_energy()
+                        self.dock.test_print() #bar
+
 
 #bar - start
-#docking_parameter_file = "./Parameters/ind.dpf"
-#autoDock = AutoDock(docking_parameter_file)
-#autoDock.run()
+docking_parameter_file = "./Parameters/ind.dpf"
+autoDock = AutoDock(docking_parameter_file)
+autoDock.run()
 #bar - stop

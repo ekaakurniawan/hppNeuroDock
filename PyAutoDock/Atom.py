@@ -147,11 +147,11 @@ class Bond:
             for j in xrange(i + 1, total_atoms):
                 k = sorted_idx[j]
                 distance = distances[k]
-                min_distance = minmax_distance[atom_types[i]][atom_types[i]][0]
-                max_distance = minmax_distance[atom_types[i]][atom_types[i]][1]
+                min_distance = minmax_distance[atom_types[i]][atom_types[k]][0]
+                max_distance = minmax_distance[atom_types[i]][atom_types[k]][1]
                 if (distance >= min_distance) and (distance <= max_distance):
-                    bond_matrix[i].append(j)
-                    bond_matrix[j].append(i)
+                    bond_matrix[i].append(k)
+                    bond_matrix[k].append(i)
 
         return bond_matrix
 
@@ -205,11 +205,10 @@ class Bond:
         for atom_id_i in ligand.root.atom_ids:
             for atom_id_j in ligand.root.atom_ids:
                 non_bond_matrix[atom_id_i - 1][atom_id_j - 1] = 0
-        for root in protein.roots:
-            for atom_id_i in root.atom_ids:
-                for atom_id_j in root.atom_ids:
-                    non_bond_matrix[p_idx + atom_id_i - 1] \
-                                   [p_idx + atom_id_j - 1] = 0
+        for atom_id_i in protein.root.atom_ids:
+            for atom_id_j in protein.root.atom_ids:
+                non_bond_matrix[p_idx + atom_id_i - 1] \
+                               [p_idx + atom_id_j - 1] = 0
 
         # Weed out rigidly bonded atoms in a same branch
         for branch in ligand.branches:
@@ -254,7 +253,7 @@ class Bond:
                     non_bond_matrix[branch1.link_id - 1] \
                                    [branch2.link_id - 1] = 0
             for atom in ligand.atoms:
-                if (atom.branch.id == branch1.parent.id):
+                if atom.branch.id == branch1.parent.id:
                     non_bond_matrix[atom.id - 1][branch1.link_id - 1] = 0
                     non_bond_matrix[branch1.link_id - 1][atom.id - 1] = 0
         for branch1 in protein.flex_branches:
@@ -263,7 +262,7 @@ class Bond:
                     non_bond_matrix[p_idx + branch1.link_id - 1] \
                                    [p_idx + branch2.link_id - 1] = 0
             for atom in protein.flex_atoms:
-                if (atom.branch.id == branch1.parent.id):
+                if atom.branch.id == branch1.parent.id:
                     non_bond_matrix[p_idx + atom.id - 1] \
                                    [p_idx + branch1.link_id - 1] = 0
                     non_bond_matrix[p_idx + branch1.link_id - 1] \
@@ -271,5 +270,3 @@ class Bond:
 
         return non_bond_matrix
 
-    def weed_molecular_bond(self, non_bond_matrix, ligand, protein):
-        return non_bond_matrix

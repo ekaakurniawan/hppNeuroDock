@@ -59,11 +59,10 @@ class Ligand:
                 # ROOT
                 elif line.startswith("ROOT"):
                     # Ligand has only one root. Always set the ID to 1.
-                    branch = Branch(branch_id, None, None, [], [], None, [])
-                    self.root = branch
-                    # Push root into branch_stack
-                    branch_stack.append(branch)
+                    self.root = Branch(branch_id, None, None, [], [], None, [])
                     branch_id += 1
+                    # Push root into branch_stack
+                    branch_stack.append(self.root)
                 # ENDROOT
                 elif line.startswith("ENDROOT"):
                     branch_stack.pop()
