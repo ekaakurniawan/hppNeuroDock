@@ -109,6 +109,17 @@ class Dock:
                                                 atom_tcoords)
         self.ligand.set_atom_tcoords(new_atom_tcoords)
 
+    # Set candidate binding mode
+    def set_pose(self, translation, rotation, torsion):
+        self.rotate_branches(torsion)
+        self.transform_ligand_root(translation, rotation)
+        if self.check_out_of_grid():
+            return False
+        else:
+            return True
+
+    # Return true if either or both ligand or/and lexible parts of protein is
+    # out of predefined grid space. Else, return false.
     def check_out_of_grid(self):
         lo_x, lo_y, lo_z = self.grid.field.lo.xyz
         hi_x, hi_y, hi_z = self.grid.field.hi.xyz
@@ -128,14 +139,51 @@ class Dock:
                 atom.tcoord.z >= hi_z): return True
         return False
 
-    # Set candidate binding mode
-    def set_pose(self, translation, rotation, torsion):
-        self.rotate_branches(torsion)
-        self.transform_ligand_root(translation, rotation)
-        if self.check_out_of_grid():
-            return False
-        else:
-            return True
+    def get_non_bond_list(self):
+        minmax_distance = self.bond.calc_minmax_distance()
+        ligand_bond_matrix = \
+            self.bond.construct_bond_matrix(self.ligand.atoms, minmax_distance)
+        protein_bond_matrix = \
+            self.bond.construct_bond_matrix(self.protein.flex_atoms, \
+                                            minmax_distance)
+
+        # Before combining ligand and protein bond matrices, shift protein ids \
+        # by protein start index (p_idx)
+        p_idx = len(self.ligand.atoms)
+        for ids in protein_bond_matrix:
+            for i, id in enumerate(ids):
+                ids[i] = id + p_idx
+        bond_matrix = ligand_bond_matrix
+        bond_matrix += protein_bond_matrix
+
+        non_bond_matrix = self.bond.construct_non_bond_matrix(len(bond_matrix))
+        non_bond_matrix = self.bond.weed_covalent_bond(bond_matrix, \
+                                                       non_bond_matrix)
+        non_bond_matrix = self.bond.weed_rigid_bond(non_bond_matrix, \
+                                                    self.ligand, self.protein)
+        self.print_non_bond_matrix(non_bond_matrix) #bar
+
+        return self.bond.convert_non_bond_matrix_to_list(non_bond_matrix, \
+                                                         self.ligand, \
+                                                         self.protein)
+
+    def print_non_bond_matrix(self, non_bond_matrix):
+        print "non_bond_matrix:"
+        for i in xrange(len(non_bond_matrix)):
+            res = "%2s  " % (i + 1)
+            for j in xrange(len(non_bond_matrix)):
+                if non_bond_matrix[i][j]:
+                    res += "|X"
+                else:
+                    res += "|_"
+            print "%s" % res
+
+    def print_non_bond_list(self, non_bond_list, title = ""):
+        print title
+        print " Atom1-Atom2    Scaled(q1xq2) "
+        print "------------------------------"
+        for nbi in non_bond_list:
+            print " %5d-%-5d     %6.2f" % (nbi.atom1, nbi.atom2, nbi.q1q2)
 
     # 3D Linear Interpolation
     @staticmethod
@@ -143,7 +191,7 @@ class Dock:
         lo_x, lo_y, lo_z = grid.field.lo.xyz
         spacing = grid.field.spacing
         atom_len = len(ligand.atoms) + len(protein.flex_atoms)
-        
+
         u = []
         v = []
         w = []

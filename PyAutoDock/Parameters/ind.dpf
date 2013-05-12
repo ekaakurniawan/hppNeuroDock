@@ -2,6 +2,7 @@ autodock_parameter_version 4.2       # used by autodock to validate parameter se
 outlev 1                             # diagnostic output level
 intelec                              # calculate internal electrostatics
 seed pid time                        # seeds for random generator
+b_prm AD4.1_bound.dat                # atomic bonding parameter file
 ligand_types A C NA OA N HD          # atoms types in ligand
 fld hsg1_rigid.maps.fld              # grid_data_file
 map hsg1_rigid.A.map                 # atom-specific affinity map
@@ -13,7 +14,7 @@ map hsg1_rigid.HD.map                # atom-specific affinity map
 elecmap hsg1_rigid.e.map             # electrostatics map
 desolvmap hsg1_rigid.d.map           # desolvation map
 move ind.pdbqt                       # small molecule
-flexres hsg1_flex.pdbqt                  # file containing flexible residues
+flexres hsg1_flex.pdbqt              # file containing flexible residues
 about 0.3689 -0.2148 -4.9865         # small molecule center
 tran0 random                         # initial coordinates/A or random
 axisangle0 random                    # initial orientation
@@ -21,7 +22,7 @@ dihe0 random                         # initial dihedrals (relative) or random
 tstep 2.0                            # translation step/A
 qstep 50.0                           # quaternion step/deg
 dstep 50.0                           # torsion step/deg
-torsdof 14                            # torsional degrees of freedom
+torsdof 14                           # torsional degrees of freedom
 rmstol 2.0                           # cluster_tolerance/A
 extnrg 1000.0                        # external grid energy
 e0max 0.0 10000                      # max initial energy; max number of retries

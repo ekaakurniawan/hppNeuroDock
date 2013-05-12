@@ -46,6 +46,11 @@ class AutoDock:
                 if line.startswith("intelec"):
                     self.dock.dps.calc_inter_elec_e = True
 
+                # Atomic bonding parameter file
+                if line.startswith("b_prm"):
+                    self.dock.bond.read(line.split()[1])
+                    print self.dock.bond #bar
+
                 if line.startswith("fld"):
                     self.grid_field_file = "./Parameters/" + line.split()[1]
                     self.dock.grid.field = Field(self.grid_field_file)
@@ -96,51 +101,15 @@ class AutoDock:
                     print self.dock.ligand #bar
                     print self.dock.protein #bar
 
-                    minmax_distance = self.dock.bond.calc_minmax_distance()
-                    ligand_bond_matrix = self.dock.bond.construct_bond_matrix(self.dock.ligand.atoms, minmax_distance)
-                    protein_bond_matrix = self.dock.bond.construct_bond_matrix(self.dock.protein.flex_atoms, minmax_distance)
-                    # Before combining ligand and protein bond matrices, shift
-                    # protein ids by protein start index (p_idx)
-                    p_idx = len(self.dock.ligand.atoms)
-                    for ids in protein_bond_matrix:
-                        for i, id in enumerate(ids):
-                            ids[i] = id + p_idx
-                    bond_matrix = ligand_bond_matrix
-                    bond_matrix += protein_bond_matrix
+                    non_bond_ligand, non_bond_ligand_receptor, \
+                        non_bond_receptor = self.dock.get_non_bond_list()
 
-                    non_bond_matrix = self.dock.bond.construct_non_bond_matrix(len(bond_matrix))
-                    non_bond_matrix = self.dock.bond.weed_covalent_bond(bond_matrix, non_bond_matrix)
-                    #bar - start
-                    print "\nnon_bond_matrix - 1-1, 1-2, 1-3, 1-4 interactions:"
-                    for i in xrange(len(non_bond_matrix)):
-                        res = ""
-                        for j in xrange(len(non_bond_matrix)):
-                            res += "%s" % non_bond_matrix[i][j]
-                        print "%s" % res
-                    #bar - stop
-                            
-                    non_bond_matrix = self.dock.bond.weed_rigid_bond(non_bond_matrix, self.dock.ligand, self.dock.protein)
-                    #bar - start
-                    print "\nnon_bond_matrix - weeding rigidly bonded root atoms:"
-                    for i in xrange(len(non_bond_matrix)):
-                        res = ""
-                        for j in xrange(len(non_bond_matrix)):
-                            res += "%s" % non_bond_matrix[i][j]
-                        print "%s" % res
-                    #bar - stop
-
-                    #bar - start
-                    print "\nnon_bond_matrix - FINAL:"
-                    for i in xrange(len(non_bond_matrix)):
-                        res = "%2s  " % (i + 1)
-                        for j in xrange(len(non_bond_matrix)):
-                            if non_bond_matrix[i][j]:
-                                res += "|X"
-                            else:
-                                res += "|_"
-                        print "%s" % res
-                    #bar - stop
-
+                    self.dock.print_non_bond_list(non_bond_ligand, \
+                                                  "Non-bonded Pair Ligand-Ligand:") #bar
+                    self.dock.print_non_bond_list(non_bond_ligand_receptor, \
+                                                  "Non-bonded Pair Ligand-Receptor:") #bar
+                    self.dock.print_non_bond_list(non_bond_receptor, \
+                                                  "Non-bonded Pair Receptor-Receptor:") #bar
 
                     translation = Axis3(2.056477, 5.846611, -7.245407)
                     rotation = Quaternion(0.532211, 0.379383, 0.612442, 0.444674)
