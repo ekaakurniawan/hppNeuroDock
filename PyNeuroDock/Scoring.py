@@ -15,7 +15,7 @@
 # Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-from AutoDock import AutoDock
+from NeuroDock import NeuroDock
 from Axis3 import Axis3
 from Quaternion import Quaternion
 from Constants import DEG2RAD
@@ -23,14 +23,14 @@ from Constants import DEG2RAD
 class Scoring:
     def __init__(self):
         docking_parameter_file = "./Parameters/ind_scoring.dpf"
-        self.autoDock = AutoDock(docking_parameter_file)
-        self.autoDock.run()
+        self.neuroDock = NeuroDock(docking_parameter_file)
+        self.neuroDock.run()
 
     def __call__(self, pose):
         translation = Axis3(pose[0], pose[1], pose[2])
         rotation = Quaternion(pose[3], pose[4], pose[5], pose[6])
         torsion = [DEG2RAD * x for x in pose[7:]]
-        return self.autoDock.dock.energy(translation, rotation, torsion)
+        return self.neuroDock.dock.energy(translation, rotation, torsion)
 
 
 #bar - start

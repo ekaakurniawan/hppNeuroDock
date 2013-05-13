@@ -487,7 +487,7 @@ class Bond:
         ret += "\n"
         ret += "Energy Parameter of Different Atom Types:\n"
         for key in self.e_parms:
-            ret += "  %-2s" % key
+            ret += "  %-2s"  % key
             ret += "  %4.2f" % self.e_parms[key].rij
             ret += "  %5.3f" % self.e_parms[key].epsij
             ret += "  %7.4f" % self.e_parms[key].vol

@@ -27,7 +27,7 @@ from Quaternion import Quaternion
 from Constants import DEG2RAD
 from Atom import Bond
 
-class AutoDock:
+class NeuroDock:
     def __init__(self, docking_parameter_file = None):
         self.docking_parameter_file = docking_parameter_file
         # Instantiate Dock
@@ -126,6 +126,6 @@ class AutoDock:
 
 #bar - start
 docking_parameter_file = "./Parameters/ind.dpf"
-autoDock = AutoDock(docking_parameter_file)
-autoDock.run()
+neuroDock = NeuroDock(docking_parameter_file)
+neuroDock.run()
 #bar - stop
