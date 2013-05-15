@@ -75,6 +75,7 @@ class Bond:
 
     # Desolvation Parameters
     DESOLVATION_SIGMA = 3.6
+    DESOLVATION_INV_VARIANCE = -1 / (2 * DESOLVATION_SIGMA * DESOLVATION_SIGMA)
     DESOLVATION = 0.01097
 
     # ELECSCALE converts between CGS units and SI units; see, e.g. p 254, 
@@ -82,6 +83,13 @@ class Bond:
     # Units of ELECSCALE are (Kcal/mol ) * (Angstrom / esu^2)
     # and this allows us to use distances in  Angstroms and charges in esu...
     ELECSCALE = 332.06363
+
+    X_UNBOUND_A = 12
+    X_UNBOUND_B = 6
+    C_UNBOUND_A = 392586.8  # repulsive
+    C_UNBOUND_B = 0.0       # attractive
+    # Clamp pairwise internal energies (kcal/mol )
+    E_CLAMP_INTL = 100000.0
 
     # Hydrogen Bonding Types
     NUM_H_BOND_TYPE = 6
@@ -119,6 +127,33 @@ class Bond:
             # Used to set up bonds; corresponds to the enum in mdist.h
             self.bond_index = bond_index
 
+    class EnergyTable:
+        # Number of steps for internal energy
+        NS_INTL = 2048
+        # INV_SQA_DIV = 1 / SQA_DIV = NBC2 / NS_INTL
+        # SQA_DIV = 32.00     Used in square-distance look-up table
+        # NBC2 = 64.00        NBC^2 in Angstrom^2
+        # NBC = 8.00          Non-bonded cutoff for internal energy calculation
+        #                     in Angstrom
+        INV_SQA_DIV = 0.03125
+
+        # Number of steps for dielectric value
+        NS_EL = 16384
+        def __init__(self, vdw_hb = {}, solvation = [], epsilon = [], \
+                     r_epsilon = []):
+            # Van der Waals and hidrogen bond energies
+            # Format: vdw_hb[(atom_type, atom_type)][ns_intl_i]
+            self.vdw_hb = vdw_hb
+            # Distance-dependent desolvation energy
+            # Format: solvation[ns_intl_i]
+            self.solvation = solvation
+            # Distance-dependent dielectric energy
+            # Format: epsilon[ns_el_i]
+            self.epsilon = epsilon
+            # r * distance-dependent dielectric energy
+            # Format: r_epsilon[ns_el_i]
+            self.r_epsilon = r_epsilon
+
     class NonBond:
         def __init__(self, atom1 = 0, atom_type1 = '?', \
                      atom2 = 0, atom_type2 = '?', \
@@ -153,7 +188,14 @@ class Bond:
         # Energy parameter of different atom types
         self.e_parms = {}
 
-    # Read bonding parameter file
+        # Energy Tables
+        # -------------
+        # Internal non-bonded interaction energies for 'bound' docking
+        self.bound_et = self.EnergyTable({}, [], [], [])
+        # Internal non-bonded interaction energies for 'unbound' docking
+        self.unbound_et = self.EnergyTable({}, [], [], [])
+
+    # Read bonding parameter file and store the parameters at e_parms
     def read(self, filename):
         with open("./Parameters/" + filename, 'r') as p_file:
             for line in p_file:
@@ -186,19 +228,116 @@ class Bond:
                     map_index  = int(data[10])
                     bond_index = int(data[11])
 
-                    H_BOND_TYPE_AD4 = {0: 'NON',
-                                       1: 'DS',
-                                       2: 'D1',
-                                       3: 'AS',
-                                       4: 'A1',
-                                       5: 'A2'}
-                    hbond = H_BOND_TYPE_AD4.get(hbond_type, 'NON')
+                    H_BOND_TYPE = {0: 'NON',
+                                   1: 'DS',
+                                   2: 'D1',
+                                   3: 'AS',
+                                   4: 'A1',
+                                   5: 'A2'}
+                    hbond = H_BOND_TYPE.get(hbond_type, 'NON')
                     
                     e_parm = self.EnergyParameter(rij, epsij, vol, solpar, \
                                                   rij_hb, epsij_hb, hbond, \
                                                   rec_index, map_index, \
                                                   bond_index)
                     self.e_parms[atom_type] = e_parm
+
+    def calc_internal_energy_table(self, ligand):
+        # Distance-dependent desolvation calculation
+        self.bound_et.solvation.append(0.0)
+        self.unbound_et.solvation.append(0.0)
+        for i in xrange(1, self.EnergyTable.NS_INTL):
+            r = math.sqrt(i * self.EnergyTable.INV_SQA_DIV)
+            # Compute the distance-dependent gaussian component of the
+            # desolvation energy. Weight this by the coefficient for
+            # desolvation.
+            e_solvation = self.fec_desolv * \
+                          math.exp(self.DESOLVATION_INV_VARIANCE * r * r)
+            self.bound_et.solvation.append(e_solvation)
+            self.unbound_et.solvation.append(e_solvation)
+
+        # Van der Waals and hidrogen bond energies calculation
+        for i, at_i in enumerate(ligand.atom_types):
+            rij_i      = self.e_parms[at_i].rij
+            epsij_i    = self.e_parms[at_i].epsij
+            rij_hb_i   = self.e_parms[at_i].rij_hb
+            epsij_hb_i = self.e_parms[at_i].epsij_hb
+            hbond_i    = self.e_parms[at_i].hbond
+
+            for at_j in ligand.atom_types[i:]:
+                rij_j      = self.e_parms[at_j].rij
+                epsij_j    = self.e_parms[at_j].epsij
+                rij_hb_j   = self.e_parms[at_j].rij_hb
+                epsij_hb_j = self.e_parms[at_j].epsij_hb
+                hbond_j    = self.e_parms[at_j].hbond
+
+                self.bound_et.vdw_hb[(at_i, at_j)] = \
+                    [0.0 for i in xrange(self.EnergyTable.NS_INTL)]
+                self.bound_et.vdw_hb[(at_j, at_i)] = \
+                    [0.0 for i in xrange(self.EnergyTable.NS_INTL)]
+                self.unbound_et.vdw_hb[(at_i, at_j)] = \
+                    [0.0 for i in xrange(self.EnergyTable.NS_INTL)]
+                self.unbound_et.vdw_hb[(at_j, at_i)] = \
+                    [0.0 for i in xrange(self.EnergyTable.NS_INTL)]
+
+                # Determine the correct xA and xB exponents
+                xA = 12     # for both LJ, 12-6 and HB, 12-10, xA is 12
+                xB =  6     # assume we have LJ, 12-6
+
+                # i is a donor and j is an acceptor.
+                # i is a hydrogen, j is a heteroatom
+                if (hbond_i == 'DS' or hbond_i == 'D1') and \
+                   (hbond_j == 'AS' or hbond_j == 'A1' or hbond_j == 'A2'):
+                    rij = rij_hb_j
+                    epsij = epsij_hb_j
+                    xB = 10
+                # i is an acceptor and j is a donor.
+                # i is a heteroatom, j is a hydrogen
+                elif (hbond_i == 'AS' or hbond_i == 'A1' or hbond_i == 'A2') and \
+                     (hbond_j == 'DS' or hbond_j == 'D1'):
+                    rij = rij_hb_i
+                    epsij = epsij_hb_i
+                    xB = 10
+                else:
+                    # Calculate the arithmetic mean of Ri and Rj
+                    rij = (rij_i + rij_j) / 2
+                    # Calculate the geometric mean of epsi and epsj
+                    epsij = math.sqrt(epsij_i * epsij_j)
+
+                tmpconst = epsij / float(xA - xB)
+                cA = tmpconst * (rij ** float(xA)) * float(xB)
+                cB = tmpconst * (rij ** float(xB)) * float(xA)
+
+                for i in xrange(1, self.EnergyTable.NS_INTL):
+                    r = math.sqrt(i * self.EnergyTable.INV_SQA_DIV)
+
+                    # Bound Calculation
+                    # Compute r ^ xA and r ^ xB:
+                    rA = r ** xA
+                    rB = r ** xB
+                    # Calculate the bound potential for docking:
+                    # Calculate the interaction energy at this distance, r, 
+                    # using an equation of the form:
+                    #   E  =  cA / r^xA  -  cB / r^xB
+                    e_vdw_hb = min(self.E_CLAMP_INTL, (cA / rA - cB / rB))
+
+                    self.bound_et.vdw_hb[(at_i, at_j)][i] = e_vdw_hb
+                    self.bound_et.vdw_hb[(at_j, at_i)][i] = e_vdw_hb
+
+                    # Unbound Calculation
+                    # Compute r ^ xA and r ^ xB:
+                    rA = r ** float(self.X_UNBOUND_A)
+                    rB = r ** float(self.X_UNBOUND_B)
+                    # Calculate the interaction energy at this distance, r,
+                    # using an equation of the form:
+                    #   E  =  cA / r ^ xA
+                    # i.e. just the repulsive term minus r, to make the
+                    # potential long range
+                    e_vdw_hb =  min(self.E_CLAMP_INTL, \
+                                    (self.C_UNBOUND_A / rA)) - r;
+
+                    self.unbound_et.vdw_hb[(at_i, at_j)][i] = e_vdw_hb
+                    self.unbound_et.vdw_hb[(at_j, at_i)][i] = e_vdw_hb
 
     # Get natural observation of the covalent bonding range of atom to atom
     # distance

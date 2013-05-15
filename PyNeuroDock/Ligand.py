@@ -25,6 +25,8 @@ from Axis3 import Axis3
 class Ligand:
     def __init__(self):
         self.atoms = []
+        # All atom types found in this ligand
+        self.atom_types = []
         self.branches = []
         self.root = None
         # Central rotation point of ligand

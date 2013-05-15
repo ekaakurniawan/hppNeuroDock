@@ -47,7 +47,7 @@ class Dock:
         # Sorted ligand and protein branches ascendingly based on number of
         # atoms in the branch
         self.sorted_branches = []
-        
+
         # Electrostatic
         self.elecs = []
         self.elec_total = 0.0
@@ -161,7 +161,7 @@ class Dock:
                                                        non_bond_matrix)
         non_bond_matrix = self.bond.weed_rigid_bond(non_bond_matrix, \
                                                     self.ligand, self.protein)
-        self.print_non_bond_matrix(non_bond_matrix) #bar
+        #self.print_non_bond_matrix(non_bond_matrix) #bar
 
         return self.bond.convert_non_bond_matrix_to_list(non_bond_matrix, \
                                                          self.ligand, \
