@@ -59,6 +59,29 @@ class NeuroDock:
                     #bar - start
                     # Bound
                     i = 0
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 1;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 254;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 512;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 743;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 1000;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 1201;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 1330;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 1500;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = 2020;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+                    i = self.dock.bond.EnergyTable.NS_INTL - 1;
+                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+
+                    i = 0
                     print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
                     i = 1;
                     print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])

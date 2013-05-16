@@ -17,13 +17,14 @@
 
 # References:
 #  - AutoDock 4.2.3 Source Code (mdist.h, nonbonds.cc, weedbonds.cc,
-#    parameters.h, read_parameter_library.cc)
+#    parameters.h, read_parameter_library.cc, intnbtable.cc, distdepdiel.cc)
 #    http://autodock.scripps.edu
 #  - Covalent Radius
 #    http://en.wikipedia.org/wiki/Covalent_radius
 
 import math
 from Axis3 import Axis3
+from Constants import APPROX_ZERO
 
 class Atom:
     # For atom type, please refer to bond_index column inside AD4.1_bound.dat
@@ -88,7 +89,7 @@ class Bond:
     X_UNBOUND_B = 6
     C_UNBOUND_A = 392586.8  # repulsive
     C_UNBOUND_B = 0.0       # attractive
-    # Clamp pairwise internal energies (kcal/mol )
+    # Clamp pairwise internal energies (kcal/mol)
     E_CLAMP_INTL = 100000.0
 
     # Hydrogen Bonding Types
@@ -140,7 +141,7 @@ class Bond:
         # Number of steps for dielectric value
         NS_EL = 16384
         def __init__(self, vdw_hb = {}, solvation = [], epsilon = [], \
-                     r_epsilon = []):
+                     inv_r_epsilon = []):
             # Van der Waals and hidrogen bond energies
             # Format: vdw_hb[(atom_type, atom_type)][ns_intl_i]
             self.vdw_hb = vdw_hb
@@ -151,8 +152,8 @@ class Bond:
             # Format: epsilon[ns_el_i]
             self.epsilon = epsilon
             # r * distance-dependent dielectric energy
-            # Format: r_epsilon[ns_el_i]
-            self.r_epsilon = r_epsilon
+            # Format: inv_r_epsilon[ns_el_i]
+            self.inv_r_epsilon = inv_r_epsilon
 
     class NonBond:
         def __init__(self, atom1 = 0, atom_type1 = '?', \
@@ -243,9 +244,41 @@ class Bond:
                     self.e_parms[atom_type] = e_parm
 
     def calc_internal_energy_table(self, ligand):
+        # Distance-dependent dielectric energy
+        # (Mehler and Solmajer, Prot Eng 4, 903-910)
+        self.bound_et.epsilon = \
+            [1.0 for i in xrange(self.EnergyTable.NS_EL)]
+        self.unbound_et.epsilon = \
+            [1.0 for i in xrange(self.EnergyTable.NS_EL)]
+
+        self.bound_et.inv_r_epsilon = \
+            [0.0 for i in xrange(self.EnergyTable.NS_EL)]
+        self.unbound_et.inv_r_epsilon = \
+            [0.0 for i in xrange(self.EnergyTable.NS_EL)]
+
+        epsilon0 = 78.4
+        A        = -8.5525
+        B        = epsilon0 - A
+        lmda     = 0.003627        # lamda
+        lmda_B   = -lmda * B
+        rk       = 7.7839
+        for i in xrange(1, self.EnergyTable.NS_EL):
+            r = math.sqrt(i * self.EnergyTable.INV_SQA_DIV)
+            ddd = A + B / (1.0 + rk * math.exp(lmda_B * r))
+            if (ddd < APPROX_ZERO): ddd = 1.0
+
+            self.bound_et.epsilon[i] = ddd
+            self.unbound_et.epsilon[i] = ddd
+
+            inv_r_ddd = 1 / (r * ddd)
+            self.bound_et.inv_r_epsilon[i] = inv_r_ddd
+            self.unbound_et.inv_r_epsilon[i] = inv_r_ddd
+
         # Distance-dependent desolvation calculation
-        self.bound_et.solvation.append(0.0)
-        self.unbound_et.solvation.append(0.0)
+        self.bound_et.solvation = \
+            [0.0 for i in xrange(self.EnergyTable.NS_INTL)]
+        self.unbound_et.solvation = \
+            [0.0 for i in xrange(self.EnergyTable.NS_INTL)]
         for i in xrange(1, self.EnergyTable.NS_INTL):
             r = math.sqrt(i * self.EnergyTable.INV_SQA_DIV)
             # Compute the distance-dependent gaussian component of the
@@ -253,8 +286,8 @@ class Bond:
             # desolvation.
             e_solvation = self.fec_desolv * \
                           math.exp(self.DESOLVATION_INV_VARIANCE * r * r)
-            self.bound_et.solvation.append(e_solvation)
-            self.unbound_et.solvation.append(e_solvation)
+            self.bound_et.solvation[i] = e_solvation
+            self.unbound_et.solvation[i] = e_solvation
 
         # Van der Waals and hidrogen bond energies calculation
         for i, at_i in enumerate(ligand.atom_types):
