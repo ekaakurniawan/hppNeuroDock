@@ -66,7 +66,7 @@ class Dock:
                 branch.molecule = 'p' # p for protein
                 self.sorted_branches.append(branch)
             self.sorted_branches = sorted(self.sorted_branches, \
-                                          key=lambda branch: len(branch.atom_ids))
+                                          key=lambda branch: len(branch.all_atom_ids))
 
         q_rotation = Quaternion()
         rot_i = 0
@@ -82,7 +82,7 @@ class Dock:
             # Get atom coordinates
             for atom in molecule_atoms:
                 if atom.id in [branch.anchor_id] + [branch.link_id] + \
-                              branch.atom_ids:
+                              branch.all_atom_ids:
                     # Anchor and link atoms are not for rotation
                     if atom.id == branch.anchor_id:
                         anchor_tcoord = atom.tcoord

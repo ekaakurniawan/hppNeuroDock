@@ -63,7 +63,7 @@ class Branch:
         # Atom IDs in the branch except anchor and link atoms
         self.atom_ids = atom_ids
         # All atom IDs in the branch except anchor and link atoms; and atom IDs
-        # of all sub-branches
+        # of all sub-branches. Used for torsion rotation.
         self.all_atom_ids = all_atom_ids
         # Parent and child branches of this branch
         self.parent = parent
