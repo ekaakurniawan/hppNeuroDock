@@ -54,10 +54,11 @@ class Axis3(object):
         self.z -= other.z
         return self
 
+    def sq_hypotenuse(self):
+        return self.x * self.x + self.y * self.y + self.z * self.z
+
     def normalize(self):
-        mag_xyz = math.sqrt(self.x * self.x + \
-                            self.y * self.y + \
-                            self.z * self.z)
+        mag_xyz = math.sqrt(self.sq_hypotenuse())
         if mag_xyz > const.APPROX_ZERO:
             self.x /= mag_xyz
             self.y /= mag_xyz

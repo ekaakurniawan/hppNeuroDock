@@ -92,6 +92,11 @@ class Bond:
     # Clamp pairwise internal energies (kcal/mol)
     E_CLAMP_INTL = 100000.0
 
+    # Minimum atoms distance
+    RMIN_ELEC  = 0.5
+    RMIN_ELEC2 = 0.25   # RMIN_ELEC * RMIN_ELEC
+
+
     # Hydrogen Bonding Types
     NUM_H_BOND_TYPE = 6
     NON, DS, D1, AS, A1, A2 = range(NUM_H_BOND_TYPE) # range starts from 0
@@ -129,13 +134,15 @@ class Bond:
             self.bond_index = bond_index
 
     class EnergyTable:
+        # Non-bonded cutoff for internal energy calculation in Angstrom
+        NBC = 8.00
+        # NBC^2 in Angstrom^2
+        NBC2 = 64.00
         # Number of steps for internal energy
         NS_INTL = 2048
+        # Used in square-distance look-up table
+        SQA_DIV = 32.00
         # INV_SQA_DIV = 1 / SQA_DIV = NBC2 / NS_INTL
-        # SQA_DIV = 32.00     Used in square-distance look-up table
-        # NBC2 = 64.00        NBC^2 in Angstrom^2
-        # NBC = 8.00          Non-bonded cutoff for internal energy calculation
-        #                     in Angstrom
         INV_SQA_DIV = 0.03125
 
         # Number of steps for dielectric value
@@ -168,6 +175,8 @@ class Bond:
             #  0: 1-1, 1-2, and 1-3 interactions
             #  4: 1-4 interaction
             self.non_bond_type = non_bond_type
+            # Desolvation
+            self.desolv = desolv
             # Product of the partial atomic charges
             self.q1q2 = q1q2
 
@@ -243,7 +252,7 @@ class Bond:
                                                   bond_index)
                     self.e_parms[atom_type] = e_parm
 
-    def calc_internal_energy_table(self, ligand):
+    def calc_internal_energy_tables(self, ligand):
         # Distance-dependent dielectric energy
         # (Mehler and Solmajer, Prot Eng 4, 903-910)
         self.bound_et.epsilon = \

@@ -55,82 +55,8 @@ class NeuroDock:
                     for type in line.split('#')[0].split()[1:]:
                         self.dock.ligand.atom_types.append(type)
                         self.atom_type_map_files[type] = ""
-                    self.dock.bond.calc_internal_energy_table(self.dock.ligand)
-                    #bar - start
-                    # Bound
-                    i = 0
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 1;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 254;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 512;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 743;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 1000;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 1201;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 1330;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 1500;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = 2020;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-                    i = self.dock.bond.EnergyTable.NS_INTL - 1;
-                    print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-
-                    i = 0
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 1;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 254;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 512;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 743;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 1000;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 1201;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 1330;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 1500;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = 2020;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-                    i = self.dock.bond.EnergyTable.NS_INTL - 1;
-                    print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-
-                    if True:
-                        for i, at_i in enumerate(self.dock.ligand.atom_types):
-                            for at_j in self.dock.ligand.atom_types[i:]:
-                                i = 0;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 1;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 254;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 512;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 743;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 1000;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 1201;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 1330;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 1500;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = 2020;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                                i = self.dock.bond.EnergyTable.NS_INTL - 1;
-                                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                    # Unbound
-                    #bar - stop
+                    self.dock.bond.calc_internal_energy_tables(self.dock.ligand)
+                    #self.print_internal_energy_tables() #bar
 
                 if line.startswith("fld"):
                     self.grid_field_file = "./Parameters/" + line.split()[1]
@@ -178,8 +104,7 @@ class NeuroDock:
                     #print self.dock.ligand #bar
                     #print self.dock.protein #bar
 
-                    non_bond_ligand, non_bond_ligand_receptor, \
-                        non_bond_receptor = self.dock.get_non_bond_list()
+                    self.dock.get_non_bond_list()
 
                     #self.dock.print_non_bond_list(non_bond_ligand, \
                     #                              "Non-bonded Pair Ligand-Ligand:") #bar
@@ -198,8 +123,83 @@ class NeuroDock:
                                                        71.37,   59.52]]
                     if self.dock.set_pose(translation, rotation, torsion):
                         self.dock.calc_energy()
-                        #self.dock.test_print() #bar
+                        self.dock.test_print() #bar
 
+    #bar - start
+    def print_internal_energy_tables(self):
+        # Bound
+        i = 0
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 1;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 254;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 512;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 743;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 1000;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 1201;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 1330;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 1500;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = 2020;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+        i = self.dock.bond.EnergyTable.NS_INTL - 1;
+        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
+
+        i = 0
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 1;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 254;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 512;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 743;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 1000;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 1201;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 1330;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 1500;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = 2020;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+        i = self.dock.bond.EnergyTable.NS_INTL - 1;
+        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
+
+        for i, at_i in enumerate(self.dock.ligand.atom_types):
+            for at_j in self.dock.ligand.atom_types[i:]:
+                i = 0;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 1;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 254;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 512;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 743;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 1000;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 1201;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 1330;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 1500;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = 2020;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+                i = self.dock.bond.EnergyTable.NS_INTL - 1;
+                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
+    # Unbound
+    #bar - stop
 
 #bar - start
 docking_parameter_file = "./Parameters/ind.dpf"

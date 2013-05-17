@@ -16,7 +16,8 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 # References:
-#  - AutoDock 4.2.3 Source Code (mkTorTree.cc, trilinterp.cc, torNorVec.cc)
+#  - AutoDock 4.2.3 Source Code (mkTorTree.cc, torsion.cc, trilinterp.cc,
+#    torNorVec.cc, eintcal.cc)
 #    http://autodock.scripps.edu
 
 from Ligand import Ligand
@@ -37,6 +38,8 @@ class DockingParameters:
         return ret
 
 class Dock:
+    SCALE_1_4_INTERACTIONS = 0.5
+
     def __init__(self):
         self.ligand = Ligand()
         self.protein = Protein()
@@ -54,6 +57,10 @@ class Dock:
         # Van der Waals
         self.emaps = []
         self.emap_total = 0.0
+
+        self.non_bond_ligand = []
+        self.non_bond_ligand_receptor = []
+        self.non_bond_receptor = []
 
     # Rotate rotatable branches/bonds for both ligand and protein.
     # rotations is expected to be in radian.
@@ -110,6 +117,8 @@ class Dock:
         self.ligand.set_atom_tcoords(new_atom_tcoords)
 
     # Set candidate binding mode
+    # Return: - True: Success
+    #         - False: New pose is out of grid
     def set_pose(self, translation, rotation, torsion):
         self.rotate_branches(torsion)
         self.transform_ligand_root(translation, rotation)
@@ -163,9 +172,11 @@ class Dock:
                                                     self.ligand, self.protein)
         #self.print_non_bond_matrix(non_bond_matrix) #bar
 
-        return self.bond.convert_non_bond_matrix_to_list(non_bond_matrix, \
-                                                         self.ligand, \
-                                                         self.protein)
+        self.non_bond_ligand, self.non_bond_ligand_receptor, \
+            self.non_bond_receptor = \
+                self.bond.convert_non_bond_matrix_to_list(non_bond_matrix, \
+                                                          self.ligand, \
+                                                          self.protein)
 
     def print_non_bond_matrix(self, non_bond_matrix):
         print "non_bond_matrix:"
@@ -235,7 +246,7 @@ class Dock:
     # Calculate free energy
     #TODO: Exclude anchor and link atoms at each branch for intermolecular
     #      energy calculation
-    def calc_energy(self):
+    def calc_intermolecular_energy(self):
         u0, v0, w0, u1, v1, w1, \
             p000, p001, p010, p011, p100, p101, p110, p111 = \
             self.calc_linInterp3(self.grid, self.ligand, self.protein)
@@ -298,6 +309,136 @@ class Dock:
             self.emaps.append(self.emap)
             self.emap_total += self.emap
 
+    def calc_intramolecular_energy(self):
+        ns_intl_1 = self.bond.EnergyTable.NS_INTL - 1
+        ns_el_1 = self.bond.EnergyTable.NS_EL - 1
+
+        total_e_internal = 0.0
+        # Intramolecular in the ligand
+        for nb in self.non_bond_ligand:
+            atom1 = nb.atom1 - 1
+            atom2 = nb.atom2 - 1
+            atom_type1 = nb.atom_type1
+            atom_type2 = nb.atom_type2
+            non_bond_type = nb.non_bond_type
+            desolv = nb.desolv
+            q1q2 = nb.q1q2
+
+            # Get atoms distance
+            atom_tcoord1 = self.ligand.atoms[atom1].tcoord
+            atom_tcoord2 = self.ligand.atoms[atom2].tcoord
+            r_tcoord2 = atom_tcoord1 - atom_tcoord2
+            r2 = r_tcoord2.sq_hypotenuse()
+            r2 = max(self.bond.RMIN_ELEC2, r2)  # Clamp r2 at RMIN_ELEC2
+            i = int(r2 * self.bond.EnergyTable.SQA_DIV)
+            # Make sure the indexes are not greater than NS_INTL -1 and
+            # NS_EL - 1 respectively
+            i_ns_intl = min(i, ns_intl_1)
+            i_ns_el = min(i, ns_el_1)
+
+            e_internal = 0.0
+            if self.dps.calc_inter_elec_e:
+                # Calculate Electrostatic Energy
+                e_elec = q1q2 * self.bond.bound_et.inv_r_epsilon[i_ns_el]
+                e_internal += e_elec
+            if r2 < self.bond.EnergyTable.NBC2:
+                # Calculate Desolvation Energy
+                e_desolv = desolv * self.bond.bound_et.solvation[i_ns_intl]
+                # Calculate Van der Waals and Hydrogen Bond Energies
+                if self.bond.include_1_4_interactions and non_bond_type == 4:
+                    e_internal += self.SCALE_1_4_INTERACTIONS + \
+                                  (self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv)
+                else:
+                    e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
+
+            total_e_internal += e_internal
+        print "[1] total_e_internal = %f" % total_e_internal #bar
+
+        # Intermolecular ligand-receptor
+        for nb in self.non_bond_ligand_receptor:
+            atom1 = nb.atom1 - 1
+            atom2 = nb.atom2 - 1
+            atom_type1 = nb.atom_type1
+            atom_type2 = nb.atom_type2
+            non_bond_type = nb.non_bond_type
+            desolv = nb.desolv
+            q1q2 = nb.q1q2
+
+            # Get atoms distance
+            atom_tcoord1 = self.ligand.atoms[atom1].tcoord
+            atom_tcoord2 = self.protein.flex_atoms[atom2].tcoord
+            r_tcoord2 = atom_tcoord1 - atom_tcoord2
+            r2 = r_tcoord2.sq_hypotenuse()
+            r2 = max(self.bond.RMIN_ELEC2, r2)  # Clamp r2 at RMIN_ELEC2
+            i = int(r2 * self.bond.EnergyTable.SQA_DIV)
+            # Make sure the indexes are not greater than NS_INTL -1 and
+            # NS_EL - 1 respectively
+            i_ns_intl = min(i, ns_intl_1)
+            i_ns_el = min(i, ns_el_1)
+
+            e_internal = 0.0
+            if self.dps.calc_inter_elec_e:
+                # Calculate Electrostatic Energy
+                e_elec = q1q2 * self.bond.bound_et.inv_r_epsilon[i_ns_el]
+                e_internal += e_elec
+            if r2 < self.bond.EnergyTable.NBC2:
+                # Calculate Desolvation Energy
+                e_desolv = desolv * self.bond.bound_et.solvation[i_ns_intl]
+                # Calculate Van der Waals and Hydrogen Bond Energies
+                if self.bond.include_1_4_interactions and non_bond_type == 4:
+                    e_internal += self.SCALE_1_4_INTERACTIONS + \
+                        (self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv)
+                else:
+                    e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
+
+            total_e_internal += e_internal
+        print "[2] total_e_internal = %f" % total_e_internal #bar
+
+        # Intramolecular in the receptor
+        for nb in self.non_bond_receptor:
+            atom1 = nb.atom1 - 1
+            atom2 = nb.atom2 - 1
+            atom_type1 = nb.atom_type1
+            atom_type2 = nb.atom_type2
+            non_bond_type = nb.non_bond_type
+            desolv = nb.desolv
+            q1q2 = nb.q1q2
+
+            # Get atoms distance
+            atom_tcoord1 = self.protein.flex_atoms[atom1].tcoord
+            atom_tcoord2 = self.protein.flex_atoms[atom2].tcoord
+            r_tcoord2 = atom_tcoord1 - atom_tcoord2
+            r2 = r_tcoord2.sq_hypotenuse()
+            r2 = max(self.bond.RMIN_ELEC2, r2)  # Clamp r2 at RMIN_ELEC2
+            i = int(r2 * self.bond.EnergyTable.SQA_DIV)
+            # Make sure the indexes are not greater than NS_INTL -1 and
+            # NS_EL - 1 respectively
+            i_ns_intl = min(i, ns_intl_1)
+            i_ns_el = min(i, ns_el_1)
+
+            e_internal = 0.0
+            if self.dps.calc_inter_elec_e:
+                # Calculate Electrostatic Energy
+                e_elec = q1q2 * self.bond.bound_et.inv_r_epsilon[i_ns_el]
+                e_internal += e_elec
+            if r2 < self.bond.EnergyTable.NBC2:
+                # Calculate Desolvation Energy
+                e_desolv = desolv * self.bond.bound_et.solvation[i_ns_intl]
+                # Calculate Van der Waals and Hydrogen Bond Energies
+                if self.bond.include_1_4_interactions and non_bond_type == 4:
+                    e_internal += self.SCALE_1_4_INTERACTIONS + \
+                        (self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv)
+                else:
+                    e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
+
+            total_e_internal += e_internal
+        print "[3] total_e_internal = %f" % total_e_internal #bar
+
+        return total_e_internal
+
+    def calc_energy(self):
+        self.calc_intermolecular_energy()
+        self.calc_intramolecular_energy()
         return self.elecs, self.emaps
 
     # Return free energy based on molecular pose
