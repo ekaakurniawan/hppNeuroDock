@@ -583,10 +583,10 @@ class Bond:
                 atom_type2 = ligand.atoms[j].type
                 desolv = (self.e_parms[atom_type2].vol * \
                              (self.e_parms[atom_type1].solpar + \
-                                 (self.DESOLVATION * ligand.atoms[i].charge)) + \
+                                 abs(self.DESOLVATION * ligand.atoms[i].charge)) + \
                           self.e_parms[atom_type1].vol * \
                              (self.e_parms[atom_type2].solpar + \
-                                 (self.DESOLVATION * ligand.atoms[j].charge)))
+                                 abs(self.DESOLVATION * ligand.atoms[j].charge)))
                 q1q2 = scale * ligand.atoms[i].charge * ligand.atoms[j].charge
 
                 nbi = self.NonBond(ligand.atoms[i].id, atom_type1, \
@@ -605,10 +605,10 @@ class Bond:
                 atom_type2 = protein.flex_atoms[j].type
                 desolv = (self.e_parms[atom_type2].vol * \
                              (self.e_parms[atom_type1].solpar + \
-                                 (self.DESOLVATION * ligand.atoms[i].charge)) + \
+                                 abs(self.DESOLVATION * ligand.atoms[i].charge)) + \
                           self.e_parms[atom_type1].vol * \
                              (self.e_parms[atom_type2].solpar + \
-                                 (self.DESOLVATION * protein.flex_atoms[j].charge)))
+                                 abs(self.DESOLVATION * protein.flex_atoms[j].charge)))
                 q1q2 = scale * ligand.atoms[i].charge * protein.flex_atoms[j].charge
 
                 nbi = self.NonBond(ligand.atoms[i].id, atom_type1, \
@@ -628,10 +628,10 @@ class Bond:
                 atom_type2 = protein.flex_atoms[j].type
                 desolv = (self.e_parms[atom_type2].vol * \
                              (self.e_parms[atom_type1].solpar + \
-                                 (self.DESOLVATION * protein.flex_atoms[i].charge)) + \
+                                 abs(self.DESOLVATION * protein.flex_atoms[i].charge)) + \
                           self.e_parms[atom_type1].vol * \
                              (self.e_parms[atom_type2].solpar + \
-                                 (self.DESOLVATION * protein.flex_atoms[j].charge)))
+                                 abs(self.DESOLVATION * protein.flex_atoms[j].charge)))
                 q1q2 = scale * protein.flex_atoms[i].charge * \
                        protein.flex_atoms[j].charge
 
