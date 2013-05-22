@@ -27,6 +27,10 @@ class Protein:
         self.flex_atoms = []        # flexible (rotatable) atoms
         self.flex_branches = []     # flexible (rotatable) branches
         self.root = None
+        # Exclude the atom and the first atom branching out of root from
+        # intermolecular energy calculation. The atom ids to be ingnored are
+        # stored in ignore_inter.
+        self.ignore_inter = []
 
     def read_flex_pdbqt(self, filename):
         with open(filename, 'r') as p_file:
@@ -89,6 +93,14 @@ class Protein:
                 elif line.startswith("ENDBRANCH"):
                     # Pop inactive branch from branch_stack
                     branch_stack.pop()
+
+        # Exclude the atom and the first atom branching out of root from
+        # intermolecular energy calculation.
+        for atom_ids in self.root.atom_ids:
+            self.ignore_inter.append(atom_ids)
+            if atom_ids + 1 <= len(self.flex_atoms):
+                self.ignore_inter.append(atom_ids + 1)
+        #print self.ignore_inter #bar
 
     def get_flex_atom_tcoords(self):
         tcoords = []

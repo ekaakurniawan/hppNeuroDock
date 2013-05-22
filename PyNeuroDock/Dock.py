@@ -244,14 +244,13 @@ class Dock:
                p000, p001, p010, p011, p100, p101, p110, p111
 
     # Calculate free energy
-    #TODO: Exclude anchor and link atoms at each branch for intermolecular
-    #      energy calculation
     def calc_intermolecular_energy(self):
         u0, v0, w0, u1, v1, w1, \
             p000, p001, p010, p011, p100, p101, p110, p111 = \
             self.calc_linInterp3(self.grid, self.ligand, self.protein)
 
         atom_len = len(self.ligand.atoms) + len(self.protein.flex_atoms)
+        protein_idx = len(self.ligand.atoms)
 
         es = [] # Electrostatic
         for i in xrange(atom_len):
@@ -292,6 +291,19 @@ class Dock:
             m += p110[i] * self.grid.maps[type][w0[i]][v0[i]][u1[i]]
             m += p111[i] * self.grid.maps[type][w0[i]][v0[i]][u0[i]]
             ms.append(m)
+        for idx, atom in enumerate(self.protein.flex_atoms):
+            m = 0.0
+            type = atom.type
+            i = protein_idx + idx
+            m += p000[i] * self.grid.maps[type][w1[i]][v1[i]][u1[i]]
+            m += p001[i] * self.grid.maps[type][w1[i]][v1[i]][u0[i]]
+            m += p010[i] * self.grid.maps[type][w1[i]][v0[i]][u1[i]]
+            m += p011[i] * self.grid.maps[type][w1[i]][v0[i]][u0[i]]
+            m += p100[i] * self.grid.maps[type][w0[i]][v1[i]][u1[i]]
+            m += p101[i] * self.grid.maps[type][w0[i]][v1[i]][u0[i]]
+            m += p110[i] * self.grid.maps[type][w0[i]][v0[i]][u1[i]]
+            m += p111[i] * self.grid.maps[type][w0[i]][v0[i]][u0[i]]
+            ms.append(m)
 
         # Electrostatic
         self.elecs = []
@@ -300,12 +312,28 @@ class Dock:
             self.elec = es[i] * atom.charge
             self.elecs.append(self.elec)
             self.elec_total += self.elec
+        for idx, atom in enumerate(self.protein.flex_atoms):
+            if atom.id in self.protein.ignore_inter:
+                self.elec = 0.0
+            else:
+                i = protein_idx + idx
+                self.elec = es[i] * atom.charge
+            self.elecs.append(self.elec)
+            self.elec_total += self.elec
 
         # Van der Waals
         self.emaps = []
         self.emap_total = 0.0
         for i, atom in enumerate(self.ligand.atoms):
             self.emap = ms[i] + ds[i] * abs(atom.charge)
+            self.emaps.append(self.emap)
+            self.emap_total += self.emap
+        for idx, atom in enumerate(self.protein.flex_atoms):
+            if atom.id in self.protein.ignore_inter:
+                self.emap = 0.0
+            else:
+                i = protein_idx + idx
+                self.emap = ms[i] + ds[i] * abs(atom.charge)
             self.emaps.append(self.emap)
             self.emap_total += self.emap
 
@@ -450,13 +478,15 @@ class Dock:
 
     def test_print(self):
         for i, atom in enumerate(self.ligand.atoms):
-            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+9.4f | %+9.4f" % \
+            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+9.2f | %+9.2f" % \
                 (i + 1, atom.type, \
                  atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
                  self.emaps[i], self.elecs[i])
-        for i, atom in enumerate(self.protein.flex_atoms):
-            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+9.4f | %+9.4f" % \
-                (i + 1, atom.type, \
+        protein_idx = len(self.ligand.atoms)
+        for idx, atom in enumerate(self.protein.flex_atoms):
+            i = protein_idx + idx
+            print "%2s: %2s - %8.3f, %8.3f, %8.3f | %+9.2f | %+9.2f" % \
+                (idx + 1, atom.type, \
                  atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
                  self.emaps[i], self.elecs[i])
 
