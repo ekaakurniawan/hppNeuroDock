@@ -25,6 +25,7 @@ class Scoring:
         docking_parameter_file = "./Parameters/ind_scoring.dpf"
         self.neuroDock = NeuroDock(docking_parameter_file)
         self.neuroDock.run()
+        self.neuroDock.dock.get_non_bond_list()
 
     def __call__(self, pose):
         translation = Axis3(pose[0], pose[1], pose[2])

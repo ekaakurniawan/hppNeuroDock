@@ -337,6 +337,8 @@ class Dock:
             self.emaps.append(self.emap)
             self.emap_total += self.emap
 
+        return self.elec_total + self.emap_total
+
     def calc_intramolecular_energy(self):
         ns_intl_1 = self.bond.EnergyTable.NS_INTL - 1
         ns_el_1 = self.bond.EnergyTable.NS_EL - 1
@@ -380,7 +382,7 @@ class Dock:
                     e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
 
             total_e_internal += e_internal
-        print "[1] total_e_internal = %f" % total_e_internal #bar
+        #print "[1] total_e_internal = %f" % total_e_internal #bar
 
         # Intermolecular ligand-receptor
         for nb in self.non_bond_ligand_receptor:
@@ -420,7 +422,7 @@ class Dock:
                     e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
 
             total_e_internal += e_internal
-        print "[2] total_e_internal = %f" % total_e_internal #bar
+        #print "[2] total_e_internal = %f" % total_e_internal #bar
 
         # Intramolecular in the receptor
         for nb in self.non_bond_receptor:
@@ -460,14 +462,14 @@ class Dock:
                     e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
 
             total_e_internal += e_internal
-        print "[3] total_e_internal = %f" % total_e_internal #bar
+        #print "[3] total_e_internal = %f" % total_e_internal #bar
 
         return total_e_internal
 
     def calc_energy(self):
-        self.calc_intermolecular_energy()
-        self.calc_intramolecular_energy()
-        return self.elecs, self.emaps
+        intermolecular_energy = self.calc_intermolecular_energy()
+        intramolecular_energy = self.calc_intramolecular_energy()
+        return intermolecular_energy + intramolecular_energy
 
     # Return free energy based on molecular pose
     def energy(self, translation, rotation, torsion):

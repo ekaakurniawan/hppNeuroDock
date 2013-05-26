@@ -123,7 +123,7 @@ class NeuroDock:
                                                        71.37,   59.52]]
                     if self.dock.set_pose(translation, rotation, torsion):
                         self.dock.calc_energy()
-                        self.dock.test_print() #bar
+                        #self.dock.test_print() #bar
 
     #bar - start
     def print_internal_energy_tables(self):
@@ -202,7 +202,7 @@ class NeuroDock:
     #bar - stop
 
 #bar - start
-docking_parameter_file = "./Parameters/ind.dpf"
-neuroDock = NeuroDock(docking_parameter_file)
-neuroDock.run()
+#docking_parameter_file = "./Parameters/ind.dpf"
+#neuroDock = NeuroDock(docking_parameter_file)
+#neuroDock.run()
 #bar - stop
