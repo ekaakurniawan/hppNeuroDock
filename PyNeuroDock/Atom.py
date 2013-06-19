@@ -96,7 +96,6 @@ class Bond:
     RMIN_ELEC  = 0.5
     RMIN_ELEC2 = 0.25   # RMIN_ELEC * RMIN_ELEC
 
-
     # Hydrogen Bonding Types
     NUM_H_BOND_TYPE = 6
     NON, DS, D1, AS, A1, A2 = range(NUM_H_BOND_TYPE) # range starts from 0
@@ -183,6 +182,8 @@ class Bond:
     def __init__(self):
         # By default, 1-4 interactions is disabled
         self.include_1_4_interactions = False
+        # Number of torsional degrees of freedom (DoF)
+        self.torsional_dof = 0
 
         # Free energy coefficients for Van der Waals term
         self.fec_vdw = 0.0
@@ -506,7 +507,7 @@ class Bond:
     # Applicable for both ligand and protein.
     def weed_rigid_bond(self, non_bond_matrix, ligand, protein):
         # Starting index for protein atom IDs
-        p_idx = len(ligand.atoms)
+        p_idx = len(ligand.ori_atoms)
         
         # Weed out rigidly bonded root atoms
         for atom_id_i in ligand.root.atom_ids:
@@ -559,7 +560,7 @@ class Bond:
                 if branch1.parent.id == branch2.parent.id:
                     non_bond_matrix[branch1.link_id - 1] \
                                    [branch2.link_id - 1] = 0
-            for atom in ligand.atoms:
+            for atom in ligand.ori_atoms:
                 if atom.branch.id == branch1.parent.id:
                     non_bond_matrix[atom.id - 1][branch1.link_id - 1] = 0
                     non_bond_matrix[branch1.link_id - 1][atom.id - 1] = 0
@@ -568,7 +569,7 @@ class Bond:
                 if branch1.parent.id == branch2.parent.id:
                     non_bond_matrix[p_idx + branch1.link_id - 1] \
                                    [p_idx + branch2.link_id - 1] = 0
-            for atom in protein.flex_atoms:
+            for atom in protein.ori_flex_atoms:
                 if atom.branch.id == branch1.parent.id:
                     non_bond_matrix[p_idx + atom.id - 1] \
                                    [p_idx + branch1.link_id - 1] = 0
@@ -578,8 +579,8 @@ class Bond:
         return non_bond_matrix
 
     def convert_non_bond_matrix_to_list(self, non_bond_matrix, ligand, protein):
-        ligand_len = len(ligand.atoms)
-        protein_len = len(protein.flex_atoms)
+        ligand_len = len(ligand.ori_atoms)
+        protein_len = len(protein.ori_flex_atoms)
         scale = self.ELECSCALE * self.fec_estat
         # Intramolecular non-bond for ligand
         non_bond_ligand = []
@@ -588,18 +589,18 @@ class Bond:
                 if (non_bond_matrix[i][j] != 1) and \
                    (non_bond_matrix[i][j] != 4):
                     continue
-                atom_type1 = ligand.atoms[i].type
-                atom_type2 = ligand.atoms[j].type
+                atom_type1 = ligand.ori_atoms[i].type
+                atom_type2 = ligand.ori_atoms[j].type
                 desolv = (self.e_parms[atom_type2].vol * \
                              (self.e_parms[atom_type1].solpar + \
-                                 abs(self.DESOLVATION * ligand.atoms[i].charge)) + \
+                                 abs(self.DESOLVATION * ligand.ori_atoms[i].charge)) + \
                           self.e_parms[atom_type1].vol * \
                              (self.e_parms[atom_type2].solpar + \
-                                 abs(self.DESOLVATION * ligand.atoms[j].charge)))
-                q1q2 = scale * ligand.atoms[i].charge * ligand.atoms[j].charge
+                                 abs(self.DESOLVATION * ligand.ori_atoms[j].charge)))
+                q1q2 = scale * ligand.ori_atoms[i].charge * ligand.ori_atoms[j].charge
 
-                nbi = self.NonBond(ligand.atoms[i].id, atom_type1, \
-                                   ligand.atoms[j].id, atom_type2, \
+                nbi = self.NonBond(ligand.ori_atoms[i].id, atom_type1, \
+                                   ligand.ori_atoms[j].id, atom_type2, \
                                    non_bond_matrix[i][j], desolv, q1q2)
                 non_bond_ligand.append(nbi)
         
@@ -610,18 +611,18 @@ class Bond:
                 if (non_bond_matrix[i][j + ligand_len] != 1) and \
                    (non_bond_matrix[i][j + ligand_len] != 4):
                         continue
-                atom_type1 = ligand.atoms[i].type
-                atom_type2 = protein.flex_atoms[j].type
+                atom_type1 = ligand.ori_atoms[i].type
+                atom_type2 = protein.ori_flex_atoms[j].type
                 desolv = (self.e_parms[atom_type2].vol * \
                              (self.e_parms[atom_type1].solpar + \
-                                 abs(self.DESOLVATION * ligand.atoms[i].charge)) + \
+                                 abs(self.DESOLVATION * ligand.ori_atoms[i].charge)) + \
                           self.e_parms[atom_type1].vol * \
                              (self.e_parms[atom_type2].solpar + \
-                                 abs(self.DESOLVATION * protein.flex_atoms[j].charge)))
-                q1q2 = scale * ligand.atoms[i].charge * protein.flex_atoms[j].charge
+                                 abs(self.DESOLVATION * protein.ori_flex_atoms[j].charge)))
+                q1q2 = scale * ligand.ori_atoms[i].charge * protein.ori_flex_atoms[j].charge
 
-                nbi = self.NonBond(ligand.atoms[i].id, atom_type1, \
-                                   protein.flex_atoms[j].id, atom_type2, \
+                nbi = self.NonBond(ligand.ori_atoms[i].id, atom_type1, \
+                                   protein.ori_flex_atoms[j].id, atom_type2, \
                                    non_bond_matrix[i][j + ligand_len], \
                                    desolv, q1q2)
                 non_bond_ligand_receptor.append(nbi)
@@ -633,19 +634,19 @@ class Bond:
                 if (non_bond_matrix[i + ligand_len][j + ligand_len] != 1) and \
                    (non_bond_matrix[i + ligand_len][j + ligand_len] != 4):
                         continue
-                atom_type1 = protein.flex_atoms[i].type
-                atom_type2 = protein.flex_atoms[j].type
+                atom_type1 = protein.ori_flex_atoms[i].type
+                atom_type2 = protein.ori_flex_atoms[j].type
                 desolv = (self.e_parms[atom_type2].vol * \
                              (self.e_parms[atom_type1].solpar + \
-                                 abs(self.DESOLVATION * protein.flex_atoms[i].charge)) + \
+                                 abs(self.DESOLVATION * protein.ori_flex_atoms[i].charge)) + \
                           self.e_parms[atom_type1].vol * \
                              (self.e_parms[atom_type2].solpar + \
-                                 abs(self.DESOLVATION * protein.flex_atoms[j].charge)))
-                q1q2 = scale * protein.flex_atoms[i].charge * \
-                       protein.flex_atoms[j].charge
+                                 abs(self.DESOLVATION * protein.ori_flex_atoms[j].charge)))
+                q1q2 = scale * protein.ori_flex_atoms[i].charge * \
+                       protein.ori_flex_atoms[j].charge
 
-                nbi = self.NonBond(protein.flex_atoms[i].id, atom_type1, \
-                                   protein.flex_atoms[j].id, atom_type2, \
+                nbi = self.NonBond(protein.ori_flex_atoms[i].id, atom_type1, \
+                                   protein.ori_flex_atoms[j].id, atom_type2, \
                                    non_bond_matrix[i + ligand_len] \
                                                   [j + ligand_len],
                                    desolv, q1q2)

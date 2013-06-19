@@ -38,7 +38,7 @@ class Quaternion:
         self.d = d
 
     def __repr__(self):
-        return "Quaternion: %.4f + %.4fi + %.4fj + %.4fk" % \
+        return "Quaternion: %+5.2f %+5.2fi %+5.2fj %+5.2fk" % \
                (self.a, self.b, self.c, self.d)
 
     def __copy__(self):

@@ -40,7 +40,7 @@ class Axis3(object):
         self.z = z
 
     def __repr__(self):
-        return "Axis3: %.4f, %.4f, %.4f" % (self.x, self.y, self.z)
+        return "Axis3: %6.2f, %6.2f, %6.2f" % (self.x, self.y, self.z)
 
     def __add__(self, other):
         return Axis3(self.x + other.x, self.y + other.y, self.z + other.z)

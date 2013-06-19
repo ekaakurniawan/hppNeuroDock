@@ -20,18 +20,17 @@
 #    http://autodock.scripps.edu
 
 from Grid import Field
-from Dock import Dock, DockingParameters
+from Dock import Dock
 from Map import ElectrostaticMap, DesolvationMap, AtomTypeMap
 from Axis3 import Axis3
-from Quaternion import Quaternion
-from Constants import DEG2RAD
-from Atom import Bond
+import Optimization
 
 class NeuroDock:
     def __init__(self, docking_parameter_file = None):
         self.docking_parameter_file = docking_parameter_file
         # Instantiate Dock
         self.dock = Dock()
+        self.optimization = None
         
         self.grid_field_file = ""
         self.atom_type_map_files = {}
@@ -49,14 +48,12 @@ class NeuroDock:
                 # Atomic bonding parameter file
                 if line.startswith("b_prm"):
                     self.dock.bond.read(line.split()[1])
-                    #print self.dock.bond #bar
 
                 if line.startswith("ligand_types"):
                     for type in line.split('#')[0].split()[1:]:
                         self.dock.ligand.atom_types.append(type)
                         self.atom_type_map_files[type] = ""
                     self.dock.bond.calc_internal_energy_tables(self.dock.ligand)
-                    #self.print_internal_energy_tables() #bar
 
                 if line.startswith("fld"):
                     self.grid_field_file = "./Parameters/" + line.split()[1]
@@ -92,117 +89,55 @@ class NeuroDock:
                     self.dock.ligand.about = about
                     # Zero-out central point. Applicable only for all ligand
                     # atoms (not protein atoms)
-                    for i in xrange(len(self.dock.ligand.atoms)):
-                        self.dock.ligand.atoms[i].tcoord -= about
+                    for i in xrange(len(self.dock.ligand.ori_atoms)):
+                        self.dock.ligand.ori_atoms[i].tcoord -= about
 
+                # Pre-energy calculation
+                if line.startswith("pre_energy_calc"):
+                    # Get atomic non-bond lists
+                    self.dock.get_non_bond_list()
+
+                    # Calculate binding torsional free energy
+                    self.dock.torsional_energy = self.dock.bond.torsional_dof * \
+                                                 self.dock.bond.fec_tors
+
+                # --------------------------------------- Empirical Settings ---
+                # 1-4 interactions
                 if line.startswith("include_1_4_interactions"):
                     # By default, 1-4 interactions is disabled. Only 1-1, 1-2,
                     # and 1-3 interactions are considered.
                     self.dock.bond.include_1_4_interactions = True
 
-                if line.startswith("ga_run"):
-                    #print self.dock.ligand #bar
-                    #print self.dock.protein #bar
+                # Torsional degrees of freedom (DoF)
+                if line.startswith("torsdof"):
+                    self.dock.bond.torsional_dof = int(line.split()[1])
 
-                    self.dock.get_non_bond_list()
+                #---------------------------------------------- Optimization ---
+                # Define optimization type to use
+                if line.startswith("opt_type"):
+                    type = line.split()[1]
+                    if type == "ga":
+                        self.optimization = Optimization.GeneticAlgorithm(self.dock)
 
-                    #self.dock.print_non_bond_list(non_bond_ligand, \
-                    #                              "Non-bonded Pair Ligand-Ligand:") #bar
-                    #self.dock.print_non_bond_list(non_bond_ligand_receptor, \
-                    #                              "Non-bonded Pair Ligand-Receptor:") #bar
-                    #self.dock.print_non_bond_list(non_bond_receptor, \
-                    #                              "Non-bonded Pair Receptor-Receptor:") #bar
+                # Run optimization
+                if line.startswith("opt_run"):
+                    self.optimization.run()
 
-                    translation = Axis3(2.056477, 5.846611, -7.245407)
-                    rotation = Quaternion(0.532211, 0.379383, 0.612442, 0.444674)
-                    torsion = [DEG2RAD * x for x in [-122.13, -179.41, \
-                                                     -141.59,  177.29, \
-                                                     -179.46,   -9.31, \
-                                                      132.37,  -89.19, \
-                                                       78.43,   22.22, \
-                                                       71.37,   59.52]]
-                    if self.dock.set_pose(translation, rotation, torsion):
-                        self.dock.calc_energy()
-                        #self.dock.test_print() #bar
-
-    #bar - start
-    def print_internal_energy_tables(self):
-        # Bound
-        i = 0
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 1;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 254;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 512;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 743;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 1000;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 1201;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 1330;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 1500;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = 2020;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-        i = self.dock.bond.EnergyTable.NS_INTL - 1;
-        print "[%5d] epsilon = %10.5f; inv_r_epsilon = %10.5f" % (i, self.dock.bond.bound_et.epsilon[i], self.dock.bond.bound_et.inv_r_epsilon[i])
-
-        i = 0
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 1;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 254;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 512;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 743;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 1000;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 1201;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 1330;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 1500;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = 2020;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-        i = self.dock.bond.EnergyTable.NS_INTL - 1;
-        print "solvation [%5d]: %10.5f" % (i, self.dock.bond.bound_et.solvation[i])
-
-        for i, at_i in enumerate(self.dock.ligand.atom_types):
-            for at_j in self.dock.ligand.atom_types[i:]:
-                i = 0;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 1;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 254;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 512;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 743;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 1000;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 1201;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 1330;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 1500;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = 2020;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-                i = self.dock.bond.EnergyTable.NS_INTL - 1;
-                print "vdw_hb [%5d][%2s][%2s]: %10.5f" % (i, at_i, at_j, self.dock.bond.bound_et.vdw_hb[(at_i, at_j)][i])
-    # Unbound
-    #bar - stop
+                #------------------------------------ Opt: Genetic Algorithm ---
+                if line.startswith("opt_ga"):
+                    words = line.split()
+                    type = words[1]
+                    value = words[2]
+                    if type == "community_size":
+                        self.optimization.community_size = int(value)
+                    if type == "pop_size":
+                        self.optimization.pop_size = int(value)
+                    if type == "num_generations":
+                        self.optimization.num_gen = int(value)
 
 #bar - start
-#docking_parameter_file = "./Parameters/ind.dpf"
-#neuroDock = NeuroDock(docking_parameter_file)
-#neuroDock.run()
+docking_parameter_file = "./Parameters/ind.dpf"
+neuroDock = NeuroDock(docking_parameter_file)
+neuroDock.run()
 #bar - stop
+

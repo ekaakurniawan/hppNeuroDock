@@ -19,11 +19,18 @@
 #  - AutoDock 4.2.3 Source Code (readPDBQT.cc, mkTorTree.cc)
 #    http://autodock.scripps.edu
 
+# TODO:
+# - Create Write PDBQT Function
+
 from Atom import Atom, Branch
 from Axis3 import Axis3
+from copy import deepcopy
 
 class Ligand:
     def __init__(self):
+        # Original atoms with original location
+        self.ori_atoms = []
+        # Modified atom locations for energy calculation
         self.atoms = []
         # All atom types found in this ligand
         self.atom_types = []
@@ -49,7 +56,7 @@ class Ligand:
                     current_branch = branch_stack[-1]
                     atom = Atom(atom_id, data[12], tcoord, float(data[11]), \
                                 current_branch)
-                    self.atoms.append(atom)
+                    self.ori_atoms.append(atom)
                     # Update atom id into current active branches
                     # Note: First branch is root but when collecting atoms, it
                     # is treated as a branch)
@@ -91,7 +98,16 @@ class Ligand:
                     # Pop inactive branch from branch_stack
                     branch_stack.pop()
 
+    def write_pdbqt(self, filename):
+        pass #bar TODO
+
+    # Reset atoms information (including location) from original atoms
+    # information
+    def reset_atoms(self):
+        self.atoms = deepcopy(self.ori_atoms)
+
     def update_tcoord_model(self, filename):
+        self.reset_atoms()
         with open(filename, 'r') as p_file:
             for line in p_file:
                 # Atom
@@ -141,8 +157,3 @@ class Ligand:
             ret += "    %s\n" % (branch.all_atom_ids)
         return ret
 
-#bar - start
-#l = Ligand()
-#l.read_pdbqt("./Inputs/ind.pdbqt")
-#print l
-#bar - stop

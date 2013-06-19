@@ -47,10 +47,17 @@ class Dock:
         self.bond = Bond()
         # Docking Parameters
         self.dps = DockingParameters()
+
         # Sorted ligand and protein branches ascendingly based on number of
         # atoms in the branch
         self.sorted_branches = []
+        # Bonding lists
+        self.non_bond_ligand = []
+        self.non_bond_ligand_receptor = []
+        self.non_bond_receptor = []
 
+        # Binding torsional free energy
+        self.torsional_energy = 0.0
         # Electrostatic
         self.elecs = []
         self.elec_total = 0.0
@@ -58,13 +65,14 @@ class Dock:
         self.emaps = []
         self.emap_total = 0.0
 
-        self.non_bond_ligand = []
-        self.non_bond_ligand_receptor = []
-        self.non_bond_receptor = []
+    def get_total_torsions(self):
+        ttl_torsions = len(self.ligand.branches)
+        ttl_torsions += len(self.protein.flex_branches)
+        return ttl_torsions
 
     # Rotate rotatable branches/bonds for both ligand and protein.
     # rotations is expected to be in radian.
-    def rotate_branches(self, rotations):
+    def rotate_branches(self, torsions):
         if not self.sorted_branches:
             for branch in self.ligand.branches:
                 branch.molecule = 'l' # l for ligand
@@ -100,7 +108,7 @@ class Dock:
                     atoms.append(atom)
                     atom_tcoords.append(atom.tcoord - link_tcoord)
             # Transform
-            q_rotation.set_angle_axis(rotations[rot_i], \
+            q_rotation.set_angle_axis(torsions[rot_i], \
                                       anchor_tcoord - link_tcoord)
             new_atom_tcoords = Quaternion.transform(link_tcoord, q_rotation, \
                                                     atom_tcoords)
@@ -119,8 +127,19 @@ class Dock:
     # Set candidate binding mode
     # Return: - True: Success
     #         - False: New pose is out of grid
-    def set_pose(self, translation, rotation, torsion):
-        self.rotate_branches(torsion)
+    def set_pose(self, translation, rotation, torsions):
+        self.rotate_branches(torsions)
+        self.transform_ligand_root(translation, rotation)
+        if self.check_out_of_grid():
+            return False
+        else:
+            return True
+
+    def reset_pose(self, translation, rotation, torsions):
+        self.ligand.reset_atoms()
+        self.protein.reset_flex_atoms()
+
+        self.rotate_branches(torsions)
         self.transform_ligand_root(translation, rotation)
         if self.check_out_of_grid():
             return False
@@ -151,14 +170,14 @@ class Dock:
     def get_non_bond_list(self):
         minmax_distance = self.bond.calc_minmax_distance()
         ligand_bond_matrix = \
-            self.bond.construct_bond_matrix(self.ligand.atoms, minmax_distance)
+            self.bond.construct_bond_matrix(self.ligand.ori_atoms, minmax_distance)
         protein_bond_matrix = \
-            self.bond.construct_bond_matrix(self.protein.flex_atoms, \
+            self.bond.construct_bond_matrix(self.protein.ori_flex_atoms, \
                                             minmax_distance)
 
         # Before combining ligand and protein bond matrices, shift protein ids \
         # by protein start index (p_idx)
-        p_idx = len(self.ligand.atoms)
+        p_idx = len(self.ligand.ori_atoms)
         for ids in protein_bond_matrix:
             for i, id in enumerate(ids):
                 ids[i] = id + p_idx
@@ -170,7 +189,6 @@ class Dock:
                                                        non_bond_matrix)
         non_bond_matrix = self.bond.weed_rigid_bond(non_bond_matrix, \
                                                     self.ligand, self.protein)
-        #self.print_non_bond_matrix(non_bond_matrix) #bar
 
         self.non_bond_ligand, self.non_bond_ligand_receptor, \
             self.non_bond_receptor = \
@@ -382,7 +400,6 @@ class Dock:
                     e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
 
             total_e_internal += e_internal
-        #print "[1] total_e_internal = %f" % total_e_internal #bar
 
         # Intermolecular ligand-receptor
         for nb in self.non_bond_ligand_receptor:
@@ -422,7 +439,6 @@ class Dock:
                     e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
 
             total_e_internal += e_internal
-        #print "[2] total_e_internal = %f" % total_e_internal #bar
 
         # Intramolecular in the receptor
         for nb in self.non_bond_receptor:
@@ -462,7 +478,6 @@ class Dock:
                     e_internal += self.bond.bound_et.vdw_hb[(atom_type1, atom_type2)][i_ns_intl] + e_desolv
 
             total_e_internal += e_internal
-        #print "[3] total_e_internal = %f" % total_e_internal #bar
 
         return total_e_internal
 
@@ -470,13 +485,6 @@ class Dock:
         intermolecular_energy = self.calc_intermolecular_energy()
         intramolecular_energy = self.calc_intramolecular_energy()
         return intermolecular_energy + intramolecular_energy
-
-    # Return free energy based on molecular pose
-    def energy(self, translation, rotation, torsion):
-        if self.set_pose(translation, rotation, torsion):
-            return self.calc_energy()
-        else:
-            return None, None
 
     def test_print(self):
         for i, atom in enumerate(self.ligand.atoms):
@@ -492,8 +500,3 @@ class Dock:
                  atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
                  self.emaps[i], self.elecs[i])
 
-
-#bar - start
-#dpf = DPF("./Parameters/ind.dpf")
-#print dpf.about
-#bar - stop

@@ -21,11 +21,16 @@
 
 from Atom import Atom, Branch
 from Axis3 import Axis3
+from copy import deepcopy
 
 class Protein:
     def __init__(self):
-        self.flex_atoms = []        # flexible (rotatable) atoms
-        self.flex_branches = []     # flexible (rotatable) branches
+        # Original flexible (rotatable) atoms with original location
+        self.ori_flex_atoms = []
+        # Modified flexible (rotatable) atom locations for energy calculation
+        self.flex_atoms = []
+        # flexible (rotatable) branches
+        self.flex_branches = []
         self.root = None
         # Exclude the atom and the first atom branching out of root from
         # intermolecular energy calculation. The atom ids to be ingnored are
@@ -50,7 +55,7 @@ class Protein:
                     current_branch = branch_stack[-1]
                     atom = Atom(atom_id, data[12], tcoord, float(data[11]), \
                                 current_branch)
-                    self.flex_atoms.append(atom)
+                    self.ori_flex_atoms.append(atom)
                     # Update atom id into current active branches
                     # Note: First branch is root but when collecting atoms, it
                     # is treated as a branch)
@@ -98,9 +103,13 @@ class Protein:
         # intermolecular energy calculation.
         for atom_ids in self.root.atom_ids:
             self.ignore_inter.append(atom_ids)
-            if atom_ids + 1 <= len(self.flex_atoms):
+            if atom_ids + 1 <= len(self.ori_flex_atoms):
                 self.ignore_inter.append(atom_ids + 1)
-        #print self.ignore_inter #bar
+
+    # Reset atoms information (including location) from original atoms
+    # information
+    def reset_flex_atoms(self):
+        self.flex_atoms = deepcopy(self.ori_flex_atoms)
 
     def get_flex_atom_tcoords(self):
         tcoords = []
@@ -142,8 +151,3 @@ class Protein:
             ret += "    %s\n" % (flex_branch.all_atom_ids)
         return ret
 
-#bar - start
-#p = Protein()
-#p.read_flex_pdbqt("./Inputs/hsg1_flex.pdbqt")
-#print p
-#bar - stop

@@ -48,6 +48,7 @@ class LFSR:
         self.bit_len = bit_len
         self.bit_len_dec = self.bit_len - 1
         self.xnor_shifts = self.xnor_shifts_list[bit_len]
+        self.denominator = 2.0 ** self.bit_len
 
     def generate(self):
         bit = self.lfsr >> self.xnor_shifts[0]
@@ -63,8 +64,7 @@ class LFSR:
     # the low value is 0.0 and the high value is 1.0.
     def zero_to_one(self):
         # For fixed bit length, the denominator is implemented as constant
-        denominator = 2.0 ** self.bit_len
-        return (self.generate() / denominator)
+        return (self.generate() / self.denominator)
 
     # This implementation follows genunf function from AutoDock that takes two
     # parameters (low and high) and returns uniform distribution in between
@@ -72,8 +72,13 @@ class LFSR:
     # the low value is 0.0 and the high value is 2 x pi.
     def zero_to_2pi(self):
         # For fixed bit length, the denominator is implemented as constant
-        denominator = 2.0 ** self.bit_len
-        return ((self.generate() / denominator) * const.TWOPI)
+        return (self.zero_to_one() * const.TWOPI)
+
+    # Randomly returns floating point number in between negative PI and
+    # positive PI
+    def neg_pi_to_pi(self):
+        # For fixed bit length, the denominator is implemented as constant
+        return ((self.zero_to_one() - 0.5) * const.TWOPI)
 
     # Randomly returns -1.0 or 1.0
     # Based on IEEE-754 Analysis Calculator,
