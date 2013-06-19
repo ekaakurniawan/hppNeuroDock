@@ -67,7 +67,7 @@ class GeneticAlgorithm:
             ret = "Individuals:\n"
             for individual in self.individuals:
                 ret += "%s  %s |" % (individual.translation_gene, \
-                                   individual.rotation_gene)
+                                     individual.rotation_gene)
                 for torsion in individual.torsions_gene:
                     ret += " %5.2f" % torsion
                 ret += "\n"
@@ -97,7 +97,8 @@ class GeneticAlgorithm:
         def crossover(self, parents_idx, ttl_torsions, rng):
             return None
 
-        def mutate(self, individual, mutation_chance, lo_grid, hi_grid, ttl_torsions, rng):
+        def mutate(self, individual, mutation_chance, \
+                   lo_grid, hi_grid, ttl_torsions, rng):
             return None
 
     class Settler(Population):
@@ -120,7 +121,8 @@ class GeneticAlgorithm:
                     individual.torsions_gene[i] = self.individuals[p2_idx].torsions_gene[i]
             return individual
 
-        def mutate(self, individual, mutation_chance, lo_grid, hi_grid, ttl_torsions, rng):
+        def mutate(self, individual, mutation_chance, \
+                   lo_grid, hi_grid, ttl_torsions, rng):
             if rng.zero_to_one() < mutation_chance:
                 # Mutating translation gene
                 if rng.zero_to_one() < 0.25:
@@ -164,7 +166,8 @@ class GeneticAlgorithm:
                     individual.torsions_gene[i] = self.individuals[p2_idx].torsions_gene[i]
             return individual
 
-        def mutate(self, individual, mutation_chance, lo_grid, hi_grid, ttl_torsions, rng):
+        def mutate(self, individual, mutation_chance, \
+                   lo_grid, hi_grid, ttl_torsions, rng):
             if rng.zero_to_one() < mutation_chance:
                 # Mutating translation gene
                 if rng.zero_to_one() < 0.75:
@@ -252,7 +255,9 @@ class GeneticAlgorithm:
         for i in xrange(self.pop_size):
             parents_idx = self.pick_parents(mating_pool)
             individual = population.crossover(parents_idx, self.ttl_torsions, self.rng)
-            individual = population.mutate(individual, self.mutation_chance, self.lo_grid, self.hi_grid, self.ttl_torsions, self.rng)
+            individual = population.mutate(individual, self.mutation_chance, \
+                                           self.lo_grid, self.hi_grid, \
+                                           self.ttl_torsions, self.rng)
             new_population.individuals.append(individual)
         return new_population
 
@@ -285,7 +290,7 @@ class GeneticAlgorithm:
 
             pop_min_scores.append([nomad_min_score, settler_min_score])
             if DEBUG:
-                print "Current Minimum Scores: %f, %f" % nomad_min_score, \
-                                                         settler_min_score
+                print "Current Minimum Scores: %f, %f" % (nomad_min_score, \
+                                                          settler_min_score)
                 print "Community Minimum Scores: %s" % pop_min_scores
 
