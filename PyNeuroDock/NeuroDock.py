@@ -20,7 +20,7 @@
 #    http://autodock.scripps.edu
 
 from Grid import Field
-from Dock import Dock
+from Dock import Dock, DockOpenCL
 from Map import ElectrostaticMap, DesolvationMap, AtomTypeMap
 from Axis3 import Axis3
 import Optimization
@@ -28,9 +28,9 @@ import Optimization
 class NeuroDock:
     def __init__(self, docking_parameter_file = None):
         self.docking_parameter_file = docking_parameter_file
-        # Instantiate Dock
-        self.dock = Dock()
+        self.dock = None
         self.optimization = None
+        self.accelerator = ""
         
         self.grid_field_file = ""
         self.atom_type_map_files = {}
@@ -42,6 +42,14 @@ class NeuroDock:
     def run(self):
         with open(self.docking_parameter_file, 'r') as p_file:
             for line in p_file:
+                # Define parallel processing accelerator
+                if line.startswith("accelerator"):
+                    self.accelerator = line.split()[1]
+                    if self.accelerator == "sequential":
+                        self.dock = Dock()
+                    if self.accelerator == "opencl":
+                        self.dock = DockOpenCL()
+
                 if line.startswith("intelec"):
                     self.dock.dps.calc_inter_elec_e = True
 
@@ -91,6 +99,7 @@ class NeuroDock:
                     # atoms (not protein atoms)
                     for i in xrange(len(self.dock.ligand.ori_atoms)):
                         self.dock.ligand.ori_atoms[i].tcoord -= about
+                    self.dock.ligand.reset_atoms()
 
                 # Pre-energy calculation
                 if line.startswith("pre_energy_calc"):
@@ -117,7 +126,12 @@ class NeuroDock:
                 if line.startswith("opt_type"):
                     type = line.split()[1]
                     if type == "ga":
-                        self.optimization = Optimization.GeneticAlgorithm(self.dock)
+                        if self.accelerator == "sequential":
+                            self.optimization = \
+                                Optimization.GeneticAlgorithm(self.dock)
+                        if self.accelerator == "opencl":
+                            self.optimization = \
+                                Optimization.GeneticAlgorithmOpenCL(self.dock)
 
                 # Run optimization
                 if line.startswith("opt_run"):

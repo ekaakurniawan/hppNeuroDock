@@ -22,6 +22,7 @@
 from Atom import Atom, Branch
 from Axis3 import Axis3
 from copy import deepcopy
+import numpy as np
 
 class Protein:
     def __init__(self):
@@ -106,6 +107,8 @@ class Protein:
             if atom_ids + 1 <= len(self.ori_flex_atoms):
                 self.ignore_inter.append(atom_ids + 1)
 
+        self.reset_flex_atoms()
+
     # Reset atoms information (including location) from original atoms
     # information
     def reset_flex_atoms(self):
@@ -115,6 +118,13 @@ class Protein:
         tcoords = []
         for flex_atom in self.flex_atoms:
             tcoords.append(flex_atom.tcoord)
+        return tcoords
+
+    def get_flex_atom_tcoords_in_numpy(self):
+        tcoords = np.array([[0., 0., 0.] for i in xrange(len(self.flex_atoms))], \
+                           dtype = float)
+        for idx, atom in enumerate(self.flex_atoms):
+            tcoords[idx] = atom.tcoord.xyz
         return tcoords
 
     def set_flex_atom_tcoords(self, tcoords):

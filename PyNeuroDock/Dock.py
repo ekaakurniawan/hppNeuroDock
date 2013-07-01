@@ -25,6 +25,10 @@ from Protein import Protein
 from Grid import Grid
 from Quaternion import Quaternion
 from Atom import Bond
+import numpy as np
+import pyopencl as cl
+
+DEBUG = False
 
 class DockingParameters:
     def __init__(self):
@@ -71,7 +75,7 @@ class Dock:
         return ttl_torsions
 
     # Rotate rotatable branches/bonds for both ligand and protein.
-    # rotations is expected to be in radian.
+    # Rotation is expected to be in radian.
     def rotate_branches(self, torsions):
         if not self.sorted_branches:
             for branch in self.ligand.branches:
@@ -135,16 +139,13 @@ class Dock:
         else:
             return True
 
+    # Set candidate binding mode from original pose
+    # Return: - True: Success
+    #         - False: New pose is out of grid
     def reset_pose(self, translation, rotation, torsions):
         self.ligand.reset_atoms()
         self.protein.reset_flex_atoms()
-
-        self.rotate_branches(torsions)
-        self.transform_ligand_root(translation, rotation)
-        if self.check_out_of_grid():
-            return False
-        else:
-            return True
+        return self.set_pose(translation, rotation, torsions)
 
     # Return true if either or both ligand or/and lexible parts of protein is
     # out of predefined grid space. Else, return false.
@@ -499,4 +500,298 @@ class Dock:
                 (idx + 1, atom.type, \
                  atom.tcoord.x, atom.tcoord.y, atom.tcoord.z, \
                  self.emaps[i], self.elecs[i])
+
+class DockOpenCL(Dock):
+    def __init__(self):
+        Dock.__init__(self)
+        # Keep information about branches rotation sequence that contains
+        # atom IDs start from 1. Use 0 to denote a non-atom information.
+        self.longest_branch = 0
+        self.longest_branch_np = np.array([0], dtype = int)
+        self.longest_branch_buf = None
+        self.branches_rot_anchor_np = np.array([], dtype = int)
+        self.branches_rot_anchor_buf = None
+        self.branches_rot_link_np = np.array([], dtype = int)
+        self.branches_rot_link_buf = None
+        self.branches_rot_size_np = np.array([], dtype = int)
+        self.branches_rot_size_buf = None
+        self.branches_rot_seq_np = np.array([], dtype = int)
+        self.branches_rot_seq_buf = None
+
+        # OpenCL program
+        self.cl_filename = "./OpenCL/Dock.cl"
+        self.cl_prg = None
+
+        # OpenCL device buffer
+        self.lo_grid_np = np.array([], dtype = float)
+        self.lo_grid_buf = None
+        self.hi_grid_np = np.array([], dtype = float)
+        self.hi_grid_buf = None
+        self.dist_grid_np = np.array([], dtype = float)
+        self.dist_grid_buf = None
+        self.ttl_torsions_np = np.array([], dtype = int)
+        self.ttl_torsions_buf = None
+        self.ttl_ligand_atoms_np = np.array([], dtype = int)
+        self.ttl_ligand_atoms_buf = None
+        self.ori_atom_tcoords_np = np.array([], dtype = float)
+        self.ori_atom_tcoords_buf = None
+        # Collection of atom coordinates for entire population. It's a 2D array
+        # i by j for atom ID and individual respectively. Indexed for atom ID
+        # starts from 1 (index 0 is not in use).
+        self.ttl_atoms_np = np.array([], dtype = int)
+        self.ttl_atoms_buf = None
+        self.ttl_poses_np = np.array([], dtype = int)
+        self.ttl_poses_buf = None
+        self.ori_poses_np = None
+        self.ori_poses_buf = None
+        self.poses_np = None
+        self.poses_buf = None
+
+    def setup_opencl_program(self, cl_ctx = None):
+        fh = open(self.cl_filename, 'r')
+        cl_code = "".join(fh.readlines())
+        self.cl_prg = cl.Program(cl_ctx, cl_code).build()
+
+    def setup_opencl_buffer(self, ttl_poses = 0, \
+                            cl_ctx = None, cl_queue = None):
+        mf = cl.mem_flags
+
+        # Grid information (OpenCL device buffer)
+        self.lo_grid_np = np.array(self.grid.field.lo.xyz, dtype = float)
+        self.lo_grid_buf = cl.Buffer(cl_ctx, \
+                                     mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                     hostbuf = self.lo_grid_np)
+        self.hi_grid_np = np.array(self.grid.field.hi.xyz, dtype = float)
+        self.hi_grid_buf = cl.Buffer(cl_ctx, \
+                                     mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                     hostbuf = self.hi_grid_np)
+        self.dist_grid_np = self.hi_grid_np - self.lo_grid_np
+        self.dist_grid_buf = cl.Buffer(cl_ctx, \
+                                       mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                       hostbuf = self.dist_grid_np)
+        # Molecule information (OpenCL device buffer)
+        self.ttl_torsions_np = np.array([self.get_total_torsions()], \
+                                        dtype = int)
+        self.ttl_torsions_buf = cl.Buffer(cl_ctx, \
+                                          mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                          hostbuf = self.ttl_torsions_np)
+        self.ttl_ligand_atoms_np = np.array([len(self.ligand.atoms)], \
+                                            dtype = int)
+        self.ttl_ligand_atoms_buf = cl.Buffer(cl_ctx, \
+                                              mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                              hostbuf = self.ttl_ligand_atoms_np)
+        self.ligand.reset_atoms()
+        self.protein.reset_flex_atoms()
+        self.ori_atom_tcoords_np = np.vstack([np.array([0., 0., 0.], dtype = float), \
+                                              self.ligand.get_atom_tcoords_in_numpy(), \
+                                              self.protein.get_flex_atom_tcoords_in_numpy()])
+        self.ori_atom_tcoords_buf = cl.Buffer(cl_ctx, \
+                                              mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                              hostbuf = self.ori_atom_tcoords_np)
+        # Poses (OpenCL device buffer)
+        ttl_atoms = len(self.ori_atom_tcoords_np)
+        self.ttl_atoms_np = np.array([ttl_atoms], dtype = int)
+        self.ttl_atoms_buf = cl.Buffer(cl_ctx, \
+                                       mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                       hostbuf = self.ttl_atoms_np)
+        self.ttl_poses_np = np.array([ttl_poses], dtype = int)
+        self.ttl_poses_buf = cl.Buffer(cl_ctx, \
+                                       mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                       hostbuf = self.ttl_poses_np)
+        self.ori_poses_np = np.hstack([self.ori_atom_tcoords_np] * ttl_poses).ravel()
+        self.ori_poses_buf = cl.Buffer(cl_ctx, \
+                                       mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                       hostbuf = self.ori_poses_np)
+        self.poses_buf = cl.array.zeros(cl_queue, \
+                                        ((ttl_atoms + 1) * ttl_poses * 3), \
+                                        dtype = float)
+
+        # Protein and ligand orientations and comformations (OpenCL device
+        # buffer)
+        self.set_branches_rotation_sequence(cl_ctx)
+
+    def get_longest_branch(self):
+        longest_branch = 0
+        for branch in self.ligand.branches:
+            branch_len = len(branch.all_atom_ids)
+            if branch_len > longest_branch:
+                longest_branch = branch_len
+        for branch in self.protein.flex_branches:
+            branch_len = len(branch.all_atom_ids)
+            if branch_len > longest_branch:
+                longest_branch = branch_len
+        return longest_branch
+        
+    # Branches rotation sequence starts from the closest to leaf
+    def set_branches_rotation_sequence(self, cl_ctx = None):
+        for branch in self.ligand.branches:
+            branch.molecule = 'l' # l for ligand
+            self.sorted_branches.append(branch)
+        for branch in self.protein.flex_branches:
+            branch.molecule = 'p' # p for protein
+            self.sorted_branches.append(branch)
+        self.sorted_branches = sorted(self.sorted_branches, \
+                                      key=lambda branch: len(branch.all_atom_ids))
+
+        self.longest_branch = self.get_longest_branch()
+        protein_idx = len(self.ligand.atoms)
+        branches_rot_anchor = []
+        branches_rot_link = []
+        branches_rot_size = []
+        branches_rot_seq = []
+        for branch in self.sorted_branches:
+            branch_rot_seq = [0 for i in xrange(self.longest_branch)]
+            # Get the atoms from either ligand or protein based on branch
+            # molecule information
+            if branch.molecule == 'l':
+                molecule_atoms = self.ligand.atoms
+                shift_atom_id = 0
+            else: # 'p'
+                molecule_atoms = self.protein.flex_atoms
+                shift_atom_id = protein_idx
+            # Get atom coordinates
+            seq_idx = 0
+            for atom in molecule_atoms:
+                if atom.id in [branch.anchor_id] + [branch.link_id] + \
+                    branch.all_atom_ids:
+                        # Anchor and link atoms are not for rotation
+                        if atom.id == branch.anchor_id:
+                            branches_rot_anchor.append(atom.id + shift_atom_id)
+                            continue
+                        if atom.id == branch.link_id:
+                            branches_rot_link.append(atom.id + shift_atom_id)
+                            continue
+                        branch_rot_seq[seq_idx] = atom.id + shift_atom_id
+                        seq_idx += 1
+            branches_rot_size.append(seq_idx)
+            branches_rot_seq.append(branch_rot_seq)
+
+        mf = cl.mem_flags
+        self.longest_branch_np = np.array([self.longest_branch], dtype = int)
+        self.longest_branch_buf = cl.Buffer(cl_ctx, \
+                                            mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                            hostbuf = self.longest_branch_np)
+        self.branches_rot_anchor_np = np.array(branches_rot_anchor, dtype = int)
+        self.branches_rot_anchor_buf = cl.Buffer(cl_ctx, \
+                                                 mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                                 hostbuf = self.branches_rot_anchor_np)
+        self.branches_rot_link_np = np.array(branches_rot_link, dtype = int)
+        self.branches_rot_link_buf = cl.Buffer(cl_ctx, \
+                                               mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                               hostbuf = self.branches_rot_link_np)
+        self.branches_rot_size_np = np.array(branches_rot_size, dtype = int)
+        self.branches_rot_size_buf = cl.Buffer(cl_ctx, \
+                                               mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                               hostbuf = self.branches_rot_size_np)
+        self.branches_rot_seq_np = np.array(branches_rot_seq, dtype = int).ravel()
+        self.branches_rot_seq_buf = cl.Buffer(cl_ctx, \
+                                              mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                              hostbuf = self.branches_rot_seq_np)
+
+        if DEBUG:
+            print "Branches Rotation Sequence Table:"
+            for i in xrange(self.get_total_torsions()):
+                print "%2d %2d (%2d) %s" % (self.branches_rot_anchor_np[i], \
+                                            self.branches_rot_link_np[i], \
+                                            self.branches_rot_size_np[i], \
+                                            self.branches_rot_seq_np[(i * self.longest_branch): \
+                                                                     ((i + 1) * self.longest_branch)])
+
+    # Rotate rotatable branches/bonds for both ligand and protein.
+    # Rotation is expected to be in radian.
+    def rotate_branches(self, torsions):
+        if not self.sorted_branches:
+            for branch in self.ligand.branches:
+                branch.molecule = 'l' # l for ligand
+                self.sorted_branches.append(branch)
+            for branch in self.protein.flex_branches:
+                branch.molecule = 'p' # p for protein
+                self.sorted_branches.append(branch)
+            self.sorted_branches = sorted(self.sorted_branches, \
+                                          key=lambda branch: len(branch.all_atom_ids))
+
+        q_rotation = Quaternion()
+        rot_i = 0
+        for branch in self.sorted_branches:
+            atoms = []
+            atom_tcoords = []
+            # Get the atoms from either ligand or protein based on branch
+            # molecule information
+            if branch.molecule == 'l':
+                molecule_atoms = self.ligand.atoms
+            else: # 'p'
+                molecule_atoms = self.protein.flex_atoms
+            # Get atom coordinates
+            for atom in molecule_atoms:
+                if atom.id in [branch.anchor_id] + [branch.link_id] + \
+                    branch.all_atom_ids:
+                        # Anchor and link atoms are not for rotation
+                        if atom.id == branch.anchor_id:
+                            anchor_tcoord = atom.tcoord
+                            continue
+                        if atom.id == branch.link_id:
+                            link_tcoord = atom.tcoord
+                            continue
+                        atoms.append(atom)
+                        atom_tcoords.append(atom.tcoord - link_tcoord)
+            # Transform
+            q_rotation.set_angle_axis(torsions[rot_i], \
+                                      anchor_tcoord - link_tcoord)
+            new_atom_tcoords = Quaternion.transform(link_tcoord, q_rotation, \
+                                                    atom_tcoords)
+            for i, atom in enumerate(atoms):
+                atom.tcoord = new_atom_tcoords[i]
+
+            rot_i += 1
+    
+    # Transform (translate and rotate) ligand root (whole body)
+    def transform_ligand_root(self, translation, rotation):
+        atom_tcoords = self.ligand.get_atom_tcoords()
+        new_atom_tcoords = Quaternion.transform(translation, rotation, \
+                                                atom_tcoords)
+        self.ligand.set_atom_tcoords(new_atom_tcoords)
+
+    def set_poses(self, ttl_poses = 0, individuals_buf = None, \
+                  cl_queue = None):
+        print self.ttl_torsions_np
+        self.cl_prg.rotate_branches(cl_queue, \
+                                    (ttl_poses * self.longest_branch,), None, \
+                                    self.ttl_torsions_buf, \
+                                    individuals_buf.data, \
+
+                                    self.longest_branch_buf, \
+                                    self.branches_rot_anchor_buf, \
+                                    self.branches_rot_link_buf, \
+                                    self.branches_rot_size_buf, \
+                                    self.branches_rot_seq_buf, \
+
+                                    self.ttl_poses_buf, \
+                                    self.poses_buf.data)
+        ttl_ligand_atoms = int(self.ttl_ligand_atoms_np[0])
+        self.cl_prg.transform_ligand_root(cl_queue, \
+                                          (ttl_poses * ttl_ligand_atoms,), \
+                                          None, \
+                                          self.ttl_ligand_atoms_buf, \
+                                          individuals_buf.data, \
+                                          self.ttl_torsions_buf, \
+                                          self.ttl_poses_buf, \
+                                          self.poses_buf.data)
+
+    def reset_poses(self, ttl_poses = 0, individuals_buf = None, \
+                    cl_ctx = None, cl_queue = None):
+        cl.enqueue_copy(cl_queue, self.poses_buf.data, self.ori_poses_buf)
+
+        #bar - start
+        print "Ori:"
+        for i in xrange(self.ttl_atoms_np):
+            print self.poses_buf[(i * ttl_poses * 3):((i * ttl_poses * 3) + 3)]
+        #bar - stop
+        
+        self.set_poses(ttl_poses, individuals_buf, cl_queue)
+
+        #bar - start
+        print "New:"
+        for i in xrange(self.ttl_atoms_np):
+            print self.poses_buf[((i * ttl_poses * 3) + 447):((i * ttl_poses * 3) + 450)]
+        #bar - stop
 

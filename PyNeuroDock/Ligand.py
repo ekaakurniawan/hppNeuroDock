@@ -25,6 +25,7 @@
 from Atom import Atom, Branch
 from Axis3 import Axis3
 from copy import deepcopy
+import numpy as np
 
 class Ligand:
     def __init__(self):
@@ -98,6 +99,8 @@ class Ligand:
                     # Pop inactive branch from branch_stack
                     branch_stack.pop()
 
+        self.reset_atoms()
+
     def write_pdbqt(self, filename):
         pass #bar TODO
 
@@ -121,6 +124,13 @@ class Ligand:
         tcoords = []
         for atom in self.atoms:
             tcoords.append(atom.tcoord)
+        return tcoords
+
+    def get_atom_tcoords_in_numpy(self):
+        tcoords = np.array([[0., 0., 0.] for i in xrange(len(self.atoms))], \
+                           dtype = float)
+        for idx, atom in enumerate(self.atoms):
+            tcoords[idx] = atom.tcoord.xyz
         return tcoords
 
     def set_atom_tcoords(self, tcoords):

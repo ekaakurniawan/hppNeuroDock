@@ -1,4 +1,5 @@
 autodock_parameter_version 4.2       # used by autodock to validate parameter set
+accelerator sequential               # parallel processing accelerator (sequential, opencl)
 outlev 1                             # diagnostic output level
 intelec                              # calculate internal electrostatics
 seed pid time                        # seeds for random generator
@@ -28,7 +29,7 @@ extnrg 1000.0                        # external grid energy
 e0max 0.0 10000                      # max initial energy; max number of retries
 pre_energy_calc                      # pre-energy calculation
 opt_type ga                          # optimization types
-opt_ga community_size 200            # number of population in a community
+opt_ga community_size 10             # number of population in a community
 opt_ga pop_size 150                  # number of individuals in a population
 opt_ga num_generations 50            # number of generations
 
