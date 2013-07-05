@@ -289,6 +289,7 @@ class GeneticAlgorithm:
     def run(self):
         self.setup()
         pop_min_scores = []
+        #return #bar  to check preprocessing time
         for community_idx in xrange(self.community_size):
             tic = time()
             # Nomad portion
@@ -326,7 +327,7 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
         def __init__(self, size = 0):
             self.size = size
             # Matrix of i by j for individuals and genes (DNA)
-            self.individuals = []
+            self.individuals = None
             self.individuals_buf = None
             self.scores = GeneticAlgorithmOpenCL.Scores()
 
@@ -363,11 +364,9 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
 
         def scoring(self, dock = None, \
                     cl_ctx = None, cl_queue = None):
-            self.scores = GeneticAlgorithmOpenCL.Scores()
             dock.reset_poses(self.size, self.individuals_buf, \
                              cl_ctx, cl_queue)
-            self.scores = dock.calc_energy()
-            return self.scores
+            dock.calc_energy()
 
         def crossover(self, parents_idx, ttl_torsions, rng):
             return None
@@ -456,20 +455,6 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
                         individual.torsions_gene[i] = rng.neg_pi_to_pi()
             return individual
 
-    class Scores(list):
-        def __init__(self, *args):
-            list.__init__(self, *args)
-
-        def minimum(self):
-            return min(self)
-
-        # Normalized scores to the total ligand atoms
-        def normalize(self, normalizer):
-            normalized_scores = []
-            for score in self:
-                normalized_scores.append(float(score) / normalizer)
-            return normalized_scores
-
     def __init__(self, dock = None):
         GeneticAlgorithm.__init__(self, dock)
         self.dock = dock
@@ -490,6 +475,13 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
         self.rng = None
         self.cl_filename = "./OpenCL/GeneticAlgorithm.cl"
         self.cl_prg = None
+        # OpenCL buffer
+        self.max_inherited_prob_np = np.array([], dtype = int)
+        self.max_inherited_prob_buf = None
+        self.normalizer_np = np.array([], dtype = int)
+        self.normalizer_buf = None
+        self.chances_np = None
+        self.chances_buf = None
 
     def setup(self):
         # Create multiple population
@@ -501,38 +493,52 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
         self.ttl_ligand_atoms = len(self.dock.ligand.ori_atoms)
 
         # OpenCL setup
-        self.cl_ctx = cl.create_some_context()
+        self.cl_ctx = cl.Context(dev_type = cl.device_type.GPU)
         self.cl_queue = cl.CommandQueue(self.cl_ctx)
         self.rng = RanluxGenerator(self.cl_queue)
         # Read OpenCL code
         fh = open(self.cl_filename, 'r')
         cl_code = "".join(fh.readlines())
         self.cl_prg = cl.Program(self.cl_ctx, cl_code).build()
-        self.dock.setup_opencl_program(self.cl_ctx)
+        self.dock.setup_opencl(self.cl_ctx, self.cl_queue)
 
         # Setup OpenCL device buffer
+        mf = cl.mem_flags
+        self.max_inherited_prob_np = np.array([self.max_inherited_prob], \
+                                              dtype = int)
+        self.max_inherited_prob_buf = cl.Buffer(self.cl_ctx, \
+                                                mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                                hostbuf = self.max_inherited_prob_np)
+        self.normalizer_np = np.array([self.ttl_ligand_atoms], dtype = int)
+        self.normalizer_buf = cl.Buffer(self.cl_ctx, \
+                                        mf.READ_ONLY | mf.COPY_HOST_PTR, \
+                                        hostbuf = self.normalizer_np)
+        self.chances_buf = cl.array.zeros(self.cl_queue, (self.pop_size), \
+                                          dtype = int)
         self.dock.setup_opencl_buffer(self.pop_size, \
                                       self.cl_ctx, self.cl_queue)
 
     def select(self, population):
         # Get individual scores
-        scores = population.scoring(self.dock, \
-                                    self.cl_ctx, self.cl_queue)
-        # Create mating pool from the scores
+        population.scoring(self.dock, self.cl_ctx, self.cl_queue)
+        self.cl_prg.calc_chances(self.cl_queue, (population.size,), None, \
+                                 self.dock.e_totals_buf.data,
+                                 self.normalizer_buf,
+                                 self.max_inherited_prob_buf,
+                                 self.chances_buf.data)
+        if DEBUG:
+            self.chances_np = self.chances_buf.get()
+            print self.chances_np
+
         mating_pool = []
-        for idx, score in enumerate(scores.normalize(self.ttl_ligand_atoms)):
-            # Use probabilistic method to select individual into mating pool
-            if score < 0:
-                chances = self.max_inherited_prob
-            else:
-                power = log(abs(score))
-                if power < self.max_inherited_prob:
-                    chances = int(self.max_inherited_prob - power)
-                else:
-                    chances = 1
-            # Fill in the mating pool
-            for i in xrange(chances):
+        for idx, chance in enumerate(self.chances_np):
+            for i in xrange(chance):
                 mating_pool.append(idx)
+
+        if DEBUG:
+            print mating_pool
+            print len(mating_pool)
+
         return mating_pool
 
     def pick_parents(self, mating_pool):
@@ -556,6 +562,7 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
     def run(self):
         self.setup()
         pop_min_scores = []
+        #return #bar to check preprocessing itme
         for community_idx in xrange(self.community_size):
             tic = time()
             # Nomad portion

@@ -101,8 +101,9 @@ class Ligand:
 
         self.reset_atoms()
 
+    #TODO
     def write_pdbqt(self, filename):
-        pass #bar TODO
+        pass
 
     # Reset atoms information (including location) from original atoms
     # information

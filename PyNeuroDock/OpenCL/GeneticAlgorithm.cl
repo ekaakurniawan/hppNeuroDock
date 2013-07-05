@@ -23,9 +23,11 @@ __kernel void construct_individuals(__global double *individuals,
                                     __global const double *dist_grid,
                                     __global const long *ttl_torsions)
 {
-    long i = get_global_id(0);          // individuals
-    long j = 3 + 4 + ttl_torsions[0];   // DNA (genes)
-    long st_idx = i * j;
+    // Individual ID
+    long i_id = get_global_id(0);
+    // DNA (gene) ID
+    long g_id = 3 + 4 + ttl_torsions[0];
+    long st_idx = i_id * g_id;
     double two_pi = 2 * M_PI;
 
     // Translation genes. Starts from index 0 to 2
@@ -50,34 +52,55 @@ __kernel void construct_individuals(__global double *individuals,
     individuals[st_idx + 3] = cos(t2) * r2;
 
     // Torsion genes. Starts from index 7 to the last index
-    for (long tor_idx = 7; tor_idx < j; tor_idx++) {
+    for (long tor_idx = 7; tor_idx < g_id; tor_idx++) {
         // rng.neg_pi_to_pi()
         individuals[st_idx + tor_idx] = (individuals[st_idx + tor_idx] - 0.5) *
                                         two_pi;
     }
 
     //bar - start
-    if (i == 0 || i == 20 || i == 149) {
-        individuals[i * 19 + 0]  =  2.056477;
-        individuals[i * 19 + 1]  =  5.846611;
-        individuals[i * 19 + 2]  =  -7.245407;
-        individuals[i * 19 + 3]  =  0.532211;
-        individuals[i * 19 + 4]  =  0.379383;
-        individuals[i * 19 + 5]  =  0.612442;
-        individuals[i * 19 + 6]  =  0.444674;
-        individuals[i * 19 + 7]  =  radians(-122.13);
-        individuals[i * 19 + 8]  =  radians(-179.41);
-        individuals[i * 19 + 9]  =  radians(-141.59);
-        individuals[i * 19 + 10] =  radians(177.29);
-        individuals[i * 19 + 11] =  radians(-179.46);
-        individuals[i * 19 + 12] =  radians(-9.31);
-        individuals[i * 19 + 13] =  radians(132.37);
-        individuals[i * 19 + 14] =  radians(-89.19);
-        individuals[i * 19 + 15] =  radians(78.43);
-        individuals[i * 19 + 16] =  radians(22.22);
-        individuals[i * 19 + 17] =  radians(71.37);
-        individuals[i * 19 + 18] =  radians(59.52);
+    if (i_id == 0 || i_id == 20 || i_id == 149) {
+        individuals[i_id * 19 + 0]  =  2.056477;
+        individuals[i_id * 19 + 1]  =  5.846611;
+        individuals[i_id * 19 + 2]  =  -7.245407;
+        individuals[i_id * 19 + 3]  =  0.532211;
+        individuals[i_id * 19 + 4]  =  0.379383;
+        individuals[i_id * 19 + 5]  =  0.612442;
+        individuals[i_id * 19 + 6]  =  0.444674;
+        individuals[i_id * 19 + 7]  =  radians(-122.13);
+        individuals[i_id * 19 + 8]  =  radians(-179.41);
+        individuals[i_id * 19 + 9]  =  radians(-141.59);
+        individuals[i_id * 19 + 10] =  radians(177.29);
+        individuals[i_id * 19 + 11] =  radians(-179.46);
+        individuals[i_id * 19 + 12] =  radians(-9.31);
+        individuals[i_id * 19 + 13] =  radians(132.37);
+        individuals[i_id * 19 + 14] =  radians(-89.19);
+        individuals[i_id * 19 + 15] =  radians(78.43);
+        individuals[i_id * 19 + 16] =  radians(22.22);
+        individuals[i_id * 19 + 17] =  radians(71.37);
+        individuals[i_id * 19 + 18] =  radians(59.52);
     }
     //bar - stop
+}
+
+__kernel void calc_chances(__global const double *e_totals,
+                           __global const long *normalizer,
+                           __global const long *max_inherited_prob,
+                           __global long *chances)
+{
+    // Individual ID
+    long i_id = get_global_id(0);
+    double score = e_totals[i_id];
+
+    if (score < 0.0) {
+        chances[i_id] = max_inherited_prob[0];
+        return;
+    }
+    double power = log(score);
+    if (power < max_inherited_prob[0]) {
+        chances[i_id] = (long)(max_inherited_prob[0] - power);
+    } else {
+        chances[i_id] = 1;
+    }
 }
 

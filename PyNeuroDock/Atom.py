@@ -179,6 +179,11 @@ class Bond:
             # Product of the partial atomic charges
             self.q1q2 = q1q2
 
+        def __repr__(self):
+            return "%2d(%2s) - %2d(%2s): %1d %6.3f %6.3f" % \
+                (self.atom1, self.atom_type1, self.atom2, self.atom_type2, \
+                 self.non_bond_type, self.desolv, self.q1q2)
+
     def __init__(self):
         # By default, 1-4 interactions is disabled
         self.include_1_4_interactions = False
