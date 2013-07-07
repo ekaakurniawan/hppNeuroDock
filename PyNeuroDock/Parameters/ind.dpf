@@ -29,7 +29,7 @@ extnrg 1000.0                        # external grid energy
 e0max 0.0 10000                      # max initial energy; max number of retries
 pre_energy_calc                      # pre-energy calculation
 opt_type ga                          # optimization types
-opt_ga community_size 10             # number of population in a community
+opt_ga community_size 200            # number of population in a community
 opt_ga pop_size 150                  # number of individuals in a population
 opt_ga num_generations 50            # number of generations
 
@@ -52,6 +52,7 @@ sw_lb_rho 0.01                       # lower bound on rho
 ls_search_freq 0.06                  # probability of performing local search on individual
 set_psw1                             # set the above pseudo-Solis & Wets parameters
 unbound_model bound                  # state of unbound ligand
+
 
 opt_run                              # run optimization
 analysis                             # perform a ranked cluster analysis

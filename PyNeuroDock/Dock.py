@@ -640,7 +640,6 @@ class DockOpenCL(Dock):
     def setup_opencl_buffer(self, ttl_poses = 0, \
                             cl_ctx = None, cl_queue = None):
         mf = cl.mem_flags
-
         #TODO: Move following variables into respective class
         # Field information (OpenCL device buffer)
         self.num_points1_np = np.array(self.grid.field.num_points1.xyz, \
@@ -974,7 +973,6 @@ class DockOpenCL(Dock):
     #TODO: Use self class cl_queue
     def set_poses(self, ttl_poses = 0, individuals_buf = None, \
                   cl_queue = None):
-        print self.ttl_torsions_np
         # Rotate rotatable branches/bonds for both ligand and protein.
         # Rotation is expected to be in radian.
         self.cl_prg.rotate_branches(cl_queue, \

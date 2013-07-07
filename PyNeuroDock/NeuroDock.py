@@ -145,7 +145,7 @@ class NeuroDock:
                     if type == "community_size":
                         self.optimization.community_size = int(value)
                     if type == "pop_size":
-                        self.optimization.pop_size = int(value)
+                        self.optimization.population_size = int(value)
                     if type == "num_generations":
                         self.optimization.num_gen = int(value)
 

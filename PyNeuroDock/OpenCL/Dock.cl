@@ -21,10 +21,11 @@
 
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 
+//TODO: Add few characters in front of definition names to act like namespace
 // Geometry index
-#define TRANSLATION_START_IDX 0
-#define ROTATION_START_IDX 3
-#define TORSION_START_IDX 7
+#define TRANSLATION_START_IDX   0
+#define ROTATION_START_IDX      3
+#define TORSION_START_IDX       7
 
 // Atom properties
 #define ATOM_TYPE_IDX       0
@@ -543,6 +544,7 @@ __kernel void calc_total_intra_energy(__global const long *ttl_poses,
 __kernel void calc_total_energy(__global const double *elec_totals,
                                 __global const double *emap_totals,
                                 __global const double *e_internal_totals,
+
                                 __global double *e_totals)
 {
     // Pose ID or individual ID
