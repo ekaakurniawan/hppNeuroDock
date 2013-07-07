@@ -1,12 +1,15 @@
-#This is an alternative implementation of Autodock.
+#Molecular Docking Tool
 
-The goal is to make the use of FPGAs to accelerate the docking.
+This tool follows closely AutoDock suite implementation. The goal is to develop heterogenous parallel program to accelerate molecular docking.
 
-We are also doing a python partial implementation of Autodock, specifically from the designing variables to the energy score part, that is:  
-*Input:*  
-a structure of the ligand S,  
-a vector of designin variables V,  
-and a scoring function F,  
-*Output:*  
-S'=transform(S,V)  
-and F(S')  
+##Python-OpenCL Implementation
+
+Tested on:
+* Python 2.7.3
+* NumPy 1.7.1
+* PyOpenCL 2013.1
+
+To run:
+* Go to **PyNeuroDock** directory
+* Execute **python NeuroDock.py**
+
