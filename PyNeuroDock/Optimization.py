@@ -33,6 +33,7 @@ import pyopencl as cl
 from pyopencl.clrandom import RanluxGenerator
 
 DEBUG = False
+VERBOSE = False
 
 class GeneticAlgorithm:
     class Individual:
@@ -131,20 +132,10 @@ class GeneticAlgorithm:
             individual = deepcopy(self.individuals[p1_idx])
             # Crossing over translation genes
             if rng.zero_to_one() > 0.5:
-                individual.translation_gene.x = self.individuals[p2_idx].translation_gene.x
-            if rng.zero_to_one() > 0.5:
-                individual.translation_gene.y = self.individuals[p2_idx].translation_gene.y
-            if rng.zero_to_one() > 0.5:
-                individual.translation_gene.z = self.individuals[p2_idx].translation_gene.z
+                individual.translation_gene = deepcopy(self.individuals[p2_idx].translation_gene)
             # Crossing over rotation genes
             if rng.zero_to_one() > 0.5:
-                individual.rotation_gene.a = self.individuals[p2_idx].rotation_gene.a
-            if rng.zero_to_one() > 0.5:
-                individual.rotation_gene.b = self.individuals[p2_idx].rotation_gene.b
-            if rng.zero_to_one() > 0.5:
-                individual.rotation_gene.c = self.individuals[p2_idx].rotation_gene.c
-            if rng.zero_to_one() > 0.5:
-                individual.rotation_gene.d = self.individuals[p2_idx].rotation_gene.d
+                individual.rotation_gene = deepcopy(self.individuals[p2_idx].rotation_gene)
             # Crossing over torsion genes
             for i in xrange(ttl_torsions):
                 if rng.zero_to_one() > 0.5:
@@ -176,10 +167,20 @@ class GeneticAlgorithm:
             individual = deepcopy(self.individuals[p1_idx])
             # Crossing over translation genes
             if rng.zero_to_one() > 0.5:
-                individual.translation_gene = deepcopy(self.individuals[p2_idx].translation_gene)
+                individual.translation_gene.x = self.individuals[p2_idx].translation_gene.x
+            if rng.zero_to_one() > 0.5:
+                individual.translation_gene.y = self.individuals[p2_idx].translation_gene.y
+            if rng.zero_to_one() > 0.5:
+                individual.translation_gene.z = self.individuals[p2_idx].translation_gene.z
             # Crossing over rotation genes
             if rng.zero_to_one() > 0.5:
-                individual.rotation_gene = deepcopy(self.individuals[p2_idx].rotation_gene)
+                individual.rotation_gene.a = self.individuals[p2_idx].rotation_gene.a
+            if rng.zero_to_one() > 0.5:
+                individual.rotation_gene.b = self.individuals[p2_idx].rotation_gene.b
+            if rng.zero_to_one() > 0.5:
+                individual.rotation_gene.c = self.individuals[p2_idx].rotation_gene.c
+            if rng.zero_to_one() > 0.5:
+                individual.rotation_gene.d = self.individuals[p2_idx].rotation_gene.d
             # Crossing over torsion genes
             for i in xrange(ttl_torsions):
                 if rng.zero_to_one() > 0.5:
@@ -237,7 +238,7 @@ class GeneticAlgorithm:
 
     def setup_rng(self):
         # Define random number generator
-        self.rng = LFSR(lfsr = 1070, bit_len = 64)
+        self.rng = LFSR(lfsr = 1070, bit_len = 48)
 
     def setup(self):
         self.lo_grid = self.dock.grid.field.lo
@@ -254,9 +255,7 @@ class GeneticAlgorithm:
         mating_pool = []
         for idx, score in enumerate(scores.normalize(self.ttl_ligand_atoms)):
             # Use probabilistic method to select individual into mating pool
-            if score == float("inf"):
-                chances = 0
-            elif score < 0:
+            if score < 0:
                 chances = self.max_inherited_prob
             else:
                 power = log(score)
@@ -301,32 +300,20 @@ class GeneticAlgorithm:
             self.nomad.create(self.population_size, self.ttl_torsions, \
                               self.lo_grid, self.hi_grid, \
                               self.rng)
-            if DEBUG: print self.nomad
+            if VERBOSE: print self.nomad
             for gen_idx in xrange(self.num_gen):
                 mating_pool = self.select(self.nomad)
-                if (len(mating_pool) <= 1):
-                    # Population vanish
-                    self.nomad.create(self.population_size, self.ttl_torsions, \
-                                      self.lo_grid, self.hi_grid, \
-                                      self.rng)
-                    continue
                 self.nomad = self.reproduce(mating_pool, self.nomad)
             nomad_min_score = self.nomad.scores.minimum()
 
             # Settler portion
             settler_min_score = float("inf")
             self.settler.individuals = deepcopy(self.nomad.individuals)
-            if DEBUG: print self.settler
+            if VERBOSE: print self.settler
             for gen_idx in xrange(self.num_gen):
                 mating_pool = self.select(self.settler)
-                if (len(mating_pool) <= 1):
-                    # Population vanish
-                    self.settler.create(self.population_size, self.ttl_torsions, \
-                                        self.lo_grid, self.hi_grid, \
-                                        self.rng)
-                    continue
                 self.settler = self.reproduce(mating_pool, self.settler)
-            if DEBUG: print self.settler
+            if VERBOSE: print self.settler
             settler_min_score = self.settler.scores.minimum()
 
             population_min_scores.append([nomad_min_score, settler_min_score])
@@ -448,8 +435,8 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
             GeneticAlgorithmOpenCL.Population.__init__(self, size, dna_size, \
                                                        cl_ctx, cl_queue, \
                                                        rng, cl_prg)
-            self.crossover_translation_mode = self.CM_SEPARATE
-            self.crossover_rotation_mode = self.CM_SEPARATE
+            self.crossover_translation_mode = self.CM_COMBINE
+            self.crossover_rotation_mode = self.CM_COMBINE
             self.crossover_probability = 0.5
             self.mutation_probability = 0.25
             # OpenCL
@@ -461,8 +448,8 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
             GeneticAlgorithmOpenCL.Population.__init__(self, size, dna_size, \
                                                        cl_ctx, cl_queue, \
                                                        rng, cl_prg)
-            self.crossover_translation_mode = self.CM_COMBINE
-            self.crossover_rotation_mode = self.CM_COMBINE
+            self.crossover_translation_mode = self.CM_SEPARATE
+            self.crossover_rotation_mode = self.CM_SEPARATE
             self.crossover_probability = 0.5
             self.mutation_probability = 0.75
             # OpenCL
@@ -471,11 +458,13 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
     def __init__(self, dock = None):
         GeneticAlgorithm.__init__(self, dock)
         # OpenCL
-        self.cl_ctx = None
-        self.cl_queue = None
-        self.rng = None
+        self.cl_ctx = cl.Context(dev_type = cl.device_type.GPU)
+        self.cl_queue = cl.CommandQueue(self.cl_ctx)
         self.cl_filename = "./OpenCL/GeneticAlgorithm.cl"
-        self.cl_prg = None
+        fh = open(self.cl_filename, 'r')
+        cl_code = "".join(fh.readlines())
+        self.cl_prg = cl.Program(self.cl_ctx, cl_code).build()
+        self.rng = None
         # OpenCL buffer
         self.population_size_np = np.array([], dtype = int)
         self.population_size_buf =  None
@@ -498,12 +487,6 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
 
     def setup_opencl(self):
         # OpenCL setup
-        self.cl_ctx = cl.Context(dev_type = cl.device_type.GPU)
-        self.cl_queue = cl.CommandQueue(self.cl_ctx)
-        # Read OpenCL code
-        fh = open(self.cl_filename, 'r')
-        cl_code = "".join(fh.readlines())
-        self.cl_prg = cl.Program(self.cl_ctx, cl_code).build()
         self.dock.setup_opencl(self.cl_ctx, self.cl_queue)
 
         # Setup OpenCL device buffer
@@ -563,10 +546,10 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
         self.rng = RanluxGenerator(self.cl_queue)
 
     def setup(self):
-        # OpenCL
-        self.setup_opencl()
         # Call parent setup
         GeneticAlgorithm.setup(self)
+        # OpenCL
+        self.setup_opencl()
 
     def select(self, population):
         # Get individual scores
@@ -624,7 +607,7 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
             # Nomad portion
             nomad_min_score = float("inf")
             self.nomad.create(self.dna_size_buf, self.dock)
-            if DEBUG: print self.nomad
+            if VERBOSE: print self.nomad
             for gen_idx in xrange(self.num_gen):
                 self.select(self.nomad)
                 self.reproduce(self.nomad)
@@ -634,11 +617,11 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
             settler_min_score = float("inf")
             cl.enqueue_copy(self.cl_queue, self.settler.individuals_buf.data, \
                             self.nomad.individuals_buf.data)
-            if DEBUG: print self.settler
+            if VERBOSE: print self.settler
             for gen_idx in xrange(self.num_gen):
                 self.select(self.settler)
                 self.reproduce(self.settler)
-            if DEBUG: print self.settler
+            if VERBOSE: print self.settler
             settler_min_score = self.settler.min_score(self.dock)
 
             population_min_scores.append([nomad_min_score, settler_min_score])

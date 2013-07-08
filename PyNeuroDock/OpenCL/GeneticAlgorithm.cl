@@ -125,19 +125,15 @@ __kernel void calc_chances(__global const double *e_totals,
 {
     // Individual ID
     long i_id = get_global_id(0);
-    double score = e_totals[i_id];
+    double score = e_totals[i_id] / (double)normalizer[0];
 
-    if (score == INFINITY) {
-        chances[i_id] = 0;
-        return;
-    }
     if (score < 0.0) {
         chances[i_id] = max_inherited_prob[0];
         return;
     }
     double power = log(score);
-    if (power < max_inherited_prob[0]) {
-        chances[i_id] = (long)(max_inherited_prob[0] - power);
+    if ((long)power < max_inherited_prob[0]) {
+        chances[i_id] = (long)((double)max_inherited_prob[0] - power);
     } else {
         chances[i_id] = 1;
     }
