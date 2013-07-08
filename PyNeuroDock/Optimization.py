@@ -237,7 +237,7 @@ class GeneticAlgorithm:
 
     def setup_rng(self):
         # Define random number generator
-        self.rng = LFSR(lfsr = 1070, bit_len = 48)
+        self.rng = LFSR(lfsr = 1070, bit_len = 64)
 
     def setup(self):
         self.lo_grid = self.dock.grid.field.lo
@@ -259,7 +259,7 @@ class GeneticAlgorithm:
             elif score < 0:
                 chances = self.max_inherited_prob
             else:
-                power = log(abs(score))
+                power = log(score)
                 if power < self.max_inherited_prob:
                     chances = int(self.max_inherited_prob - power)
                 else:
@@ -304,6 +304,12 @@ class GeneticAlgorithm:
             if DEBUG: print self.nomad
             for gen_idx in xrange(self.num_gen):
                 mating_pool = self.select(self.nomad)
+                if (len(mating_pool) <= 1):
+                    # Population vanish
+                    self.nomad.create(self.population_size, self.ttl_torsions, \
+                                      self.lo_grid, self.hi_grid, \
+                                      self.rng)
+                    continue
                 self.nomad = self.reproduce(mating_pool, self.nomad)
             nomad_min_score = self.nomad.scores.minimum()
 
@@ -313,6 +319,12 @@ class GeneticAlgorithm:
             if DEBUG: print self.settler
             for gen_idx in xrange(self.num_gen):
                 mating_pool = self.select(self.settler)
+                if (len(mating_pool) <= 1):
+                    # Population vanish
+                    self.settler.create(self.population_size, self.ttl_torsions, \
+                                        self.lo_grid, self.hi_grid, \
+                                        self.rng)
+                    continue
                 self.settler = self.reproduce(mating_pool, self.settler)
             if DEBUG: print self.settler
             settler_min_score = self.settler.scores.minimum()
