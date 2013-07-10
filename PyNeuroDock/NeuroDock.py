@@ -18,7 +18,11 @@
 # References:
 #  - AutoDock 4.2.3 Source Code (main.cc, parse_dpf_line.cc, dpftoken.h)
 #    http://autodock.scripps.edu
+#  - Program arguments handler
+#    http://www.artima.com/weblogs/viewpost.jsp?thread=4829
 
+import sys
+import getopt
 from Grid import Field
 from Dock import Dock, DockOpenCL
 from Map import ElectrostaticMap, DesolvationMap, AtomTypeMap
@@ -149,9 +153,39 @@ class NeuroDock:
                     if type == "num_generations":
                         self.optimization.num_gen = int(value)
 
-#bar - start
-docking_parameter_file = "./Parameters/ind.dpf"
-neuroDock = NeuroDock(docking_parameter_file)
-neuroDock.run()
-#bar - stop
+class Usage(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+def main(argv = None):
+    docking_parameter_file = ""         # docking parameter file
+
+    if argv is None:
+        argv = sys.argv
+    try:
+        try:
+            opts, args = getopt.getopt(argv[1:], "hp:", ["help"])
+        except getopt.error, msg:
+            raise Usage(msg)
+
+        for o, a in opts:
+            if o in ("-h", "--help"):
+                print "To run, execute: " + \
+                      "python NeuroDock.py -p docking_parameter_file.dpf"
+                sys.exit(0)
+            if o in ("-p"):
+                docking_parameter_file = a
+
+        if docking_parameter_file == "":
+            docking_parameter_file = "./Parameters/ind.dpf"
+        neuroDock = NeuroDock(docking_parameter_file)
+        neuroDock.run()
+
+    except Usage, err:
+        print >>sys.stderr, err.msg
+        print >>sys.stderr, "for help use --help"
+        return 2
+
+if __name__ == "__main__":
+    sys.exit(main())
 
