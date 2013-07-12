@@ -1,5 +1,6 @@
 autodock_parameter_version 4.2       # used by autodock to validate parameter set
 accelerator opencl                   # parallel processing accelerator (sequential, opencl)
+ocl_device_type cpu                  # opencl device types (cpu, gpu, manual)
 outlev 1                             # diagnostic output level
 intelec                              # calculate internal electrostatics
 seed pid time                        # seeds for random generator

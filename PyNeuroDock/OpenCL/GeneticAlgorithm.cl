@@ -127,6 +127,14 @@ __kernel void calc_chances(__global const double *e_totals,
     long i_id = get_global_id(0);
     double score = e_totals[i_id] / (double)normalizer[0];
 
+    // To handle different interpretation of Python infinity by different
+    // processors.
+    // - NVIDIA GeForce GT 650M catches it as 9223372036854775807
+    // - Intel Core i7 catches it as         -9223372036854775808
+    if (e_totals[i_id] == INFINITY) {
+        chances[i_id] = 1;
+        return;
+    }
     if (score < 0.0) {
         chances[i_id] = max_inherited_prob[0];
         return;

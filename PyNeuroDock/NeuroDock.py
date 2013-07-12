@@ -35,6 +35,7 @@ class NeuroDock:
         self.dock = None
         self.optimization = None
         self.accelerator = ""
+        self.cl_device_type = ""
         
         self.grid_field_file = ""
         self.atom_type_map_files = {}
@@ -46,14 +47,6 @@ class NeuroDock:
     def run(self):
         with open(self.docking_parameter_file, 'r') as p_file:
             for line in p_file:
-                # Define parallel processing accelerator
-                if line.startswith("accelerator"):
-                    self.accelerator = line.split()[1]
-                    if self.accelerator == "sequential":
-                        self.dock = Dock()
-                    if self.accelerator == "opencl":
-                        self.dock = DockOpenCL()
-
                 if line.startswith("intelec"):
                     self.dock.dps.calc_inter_elec_e = True
 
@@ -135,7 +128,8 @@ class NeuroDock:
                                 Optimization.GeneticAlgorithm(self.dock)
                         if self.accelerator == "opencl":
                             self.optimization = \
-                                Optimization.GeneticAlgorithmOpenCL(self.dock)
+                                Optimization.GeneticAlgorithmOpenCL(self.dock, \
+                                                                    self.cl_device_type)
 
                 # Run optimization
                 if line.startswith("opt_run"):
@@ -152,6 +146,19 @@ class NeuroDock:
                         self.optimization.population_size = int(value)
                     if type == "num_generations":
                         self.optimization.num_gen = int(value)
+
+                #----------------------------------------------- Accelerator ---
+                # Define parallel processing accelerator
+                if line.startswith("accelerator"):
+                    self.accelerator = line.split()[1]
+                    if self.accelerator == "sequential":
+                        self.dock = Dock()
+                    if self.accelerator == "opencl":
+                        self.dock = DockOpenCL()
+
+                # Define OpenCL device types
+                if line.startswith("ocl_device_type"):
+                    self.cl_device_type = line.split()[1]
 
 class Usage(Exception):
     def __init__(self, msg):

@@ -402,6 +402,10 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
                 ret += "\n"
             return ret
 
+        def get_individual(self, idx = 0):
+            self.individuals_np = self.individuals_buf.get()
+            return self.individuals_np[idx]
+
         def create(self, dna_size_buf = None, dock = None):
             self.rng.fill_uniform(self.individuals_buf)
             # Construct individuals
@@ -455,10 +459,16 @@ class GeneticAlgorithmOpenCL(GeneticAlgorithm):
             # OpenCL
             self.setup_opencl()
 
-    def __init__(self, dock = None):
+    def __init__(self, dock = None, cl_device_type = None):
         GeneticAlgorithm.__init__(self, dock)
         # OpenCL
-        self.cl_ctx = cl.Context(dev_type = cl.device_type.GPU)
+        self.cl_device_type = cl_device_type
+        if self.cl_device_type == "gpu":
+            self.cl_ctx = cl.Context(dev_type = cl.device_type.GPU)
+        elif self.cl_device_type == "cpu":
+            self.cl_ctx = cl.Context(dev_type = cl.device_type.CPU)
+        else: # manual selection
+            self.cl_ctx = cl.create_some_context()
         self.cl_queue = cl.CommandQueue(self.cl_ctx)
         self.cl_filename = "./OpenCL/GeneticAlgorithm.cl"
         fh = open(self.cl_filename, 'r')

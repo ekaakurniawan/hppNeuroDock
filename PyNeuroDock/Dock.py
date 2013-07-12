@@ -883,6 +883,23 @@ class DockOpenCL(Dock):
         # buffer)
         self.set_branches_rotation_sequence(cl_ctx)
 
+    def get_pose(self, idx = 0):
+        self.poses_np = self.poses_buf.get()
+        ttl_poses = self.ttl_poses_np[0]
+        ttl_atoms = self.get_total_atoms() + 1
+        pose = []
+        for i in xrange(ttl_atoms):
+            start_idx = (i * ttl_poses * 3) + (idx * 3)
+            pose.append([self.poses_np[start_idx + 0], \
+                         self.poses_np[start_idx + 1], \
+                         self.poses_np[start_idx + 2]])
+        return np.array(pose, dtype = float)
+
+    def print_pose(self, idx = 0):
+        pose_np = self.get_pose(idx)
+        for i, coord in enumerate(pose_np):
+            print "[%2d] %7.3f %7.3f %7.3f" % (i, coord[0], coord[1], coord[2])
+
     def get_longest_branch(self):
         longest_branch = 0
         for branch in self.ligand.branches:
@@ -961,14 +978,14 @@ class DockOpenCL(Dock):
                                               mf.READ_ONLY | mf.COPY_HOST_PTR, \
                                               hostbuf = self.branches_rot_seq_np)
 
-        if DEBUG:
-            print "Branches Rotation Sequence Table:"
-            for i in xrange(self.get_total_torsions()):
-                print "%2d %2d (%2d) %s" % (self.branches_rot_anchor_np[i], \
-                                            self.branches_rot_link_np[i], \
-                                            self.branches_rot_size_np[i], \
-                                            self.branches_rot_seq_np[(i * self.longest_branch): \
-                                                                     ((i + 1) * self.longest_branch)])
+    def print_branches_rotation_sequence(self):
+        print "Branches Rotation Sequence Table:"
+        for i in xrange(self.get_total_torsions()):
+            print "%2d %2d (%2d) %s" % (self.branches_rot_anchor_np[i], \
+                                        self.branches_rot_link_np[i], \
+                                        self.branches_rot_size_np[i], \
+                                        self.branches_rot_seq_np[(i * self.longest_branch): \
+                                                                 ((i + 1) * self.longest_branch)])
 
     #TODO: Use self class cl_queue
     def set_poses(self, ttl_poses = 0, individuals_buf = None, \
@@ -976,7 +993,7 @@ class DockOpenCL(Dock):
         # Rotate rotatable branches/bonds for both ligand and protein.
         # Rotation is expected to be in radian.
         self.cl_prg.rotate_branches(cl_queue, \
-                                    (ttl_poses * self.longest_branch,), None, \
+                                    (ttl_poses,), None, \
                                     self.ttl_torsions_buf, \
                                     individuals_buf.data, \
 
