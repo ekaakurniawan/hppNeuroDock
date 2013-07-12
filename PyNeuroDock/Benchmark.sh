@@ -23,6 +23,162 @@ echo "Run Time Benchmark"
 echo ""
 
 echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_32_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_64_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_128_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_256_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_512_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_32_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_64_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_128_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_256_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_512_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_32_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_64_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_128_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_256_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_opencl_512_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+
+
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_32_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_64_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_128_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_256_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_512_10.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_32_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_64_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_128_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_256_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_512_50.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_32_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_64_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_128_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_256_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+echo "-------------------------------------------------------------------------"
+dpf="Benchmark/ind_runtime_seq_512_100.dpf"
+echo "Running... $dpf"
+time /opt/local/bin/python2 NeuroDock.py -p $dpf
+
+
+
+
+echo "-------------------------------------------------------------------------"
 dpf="Benchmark/ind_runtime_opencl_256_500.dpf"
 echo "Running... $dpf"
 time /opt/local/bin/python2 NeuroDock.py -p $dpf
