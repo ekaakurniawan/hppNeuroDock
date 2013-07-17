@@ -1,6 +1,6 @@
 #Molecular Docking Tool
 
-This tool follows closely AutoDock suite implementation. The goal is to develop heterogenous parallel program to accelerate molecular docking.
+This tool follows closely AutoDock 4 implementation. The goal is to develop heterogenous parallel program to accelerate molecular docking.
 
 ##Python-OpenCL Implementation
 
