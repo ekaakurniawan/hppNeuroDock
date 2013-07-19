@@ -2,6 +2,8 @@
 
 This tool follows closely [AutoDock 4](http://autodock.scripps.edu) implementation. The goal is to develop heterogenous parallel program to accelerate molecular docking.
 
+![Binding Mode](https://raw.github.com/ekaakurniawan/FpgaNeuroDock/master/Images/Molecule/ProteinSS_hsg1_ind.png)
+
 ##Python-OpenCL Implementation
 
 Tested on:
@@ -13,3 +15,9 @@ To run:
 * Go to **PyNeuroDock** directory
 * Execute **python NeuroDock.py**
 
+Benchmark:
+* Python: Sequential processing run on 2.3GHz Intel Core i7
+* Python-OpenCL GPU: Parallel processing run on NVIDIA GeForce GT 650M 1GB (384 Cores)
+* Python-OpenCL CPU: Parallel processing run on 2.3GHz Intel Core i7 (8 Cores)
+
+![Pyton-OpenCL Benchmark](https://raw.github.com/ekaakurniawan/FpgaNeuroDock/master/Images/Benchmark/Python-OpenCL_500Gens.png)
