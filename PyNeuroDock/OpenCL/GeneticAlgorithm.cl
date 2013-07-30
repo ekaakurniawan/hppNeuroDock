@@ -147,6 +147,8 @@ __kernel void calc_chances(__global const double *e_totals,
     }
 }
 
+//TODO: Update the new individuals into individials array instead of
+//      new_individuals array
 __kernel void reproduce(__global const long *population_size,
                         __global const long *chances,
                         __global const long *ttl_reproduction_rns,
