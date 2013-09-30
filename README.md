@@ -1,8 +1,14 @@
 #Molecular Docking Tool
 
-This tool follows closely [AutoDock 4](http://autodock.scripps.edu) implementation. The goal is to develop heterogenous parallel program to accelerate molecular docking.
-
 ![Binding Mode](https://raw.github.com/ekaakurniawan/FpgaNeuroDock/master/Images/Molecule/ProteinSS_hsg1_ind.png)
+
+The goal of this project is to develop heterogenous parallel program to accelerate molecular docking. Some features include;
+* [AutoDock 4](http://autodock.scripps.edu) implementation for semiempirical energy function.
+* Historical genetic algorithm for conformational search.
+* Python implementation using OpenCL as the accelerator.
+
+Documents:
+* [TODOs](https://github.com/ekaakurniawan/FpgaNeuroDock/wiki/TODOs)
 
 ##Python-OpenCL Implementation
 
