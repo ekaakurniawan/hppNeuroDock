@@ -8,6 +8,8 @@ The goal of this project is to develop heterogenous parallel program to accelera
 * Python implementation using OpenCL as the accelerator.
 
 Documents:
+* [NTU Dissertation](https://www.dropbox.com/s/56cebveo9o844nh/NTU_Dissertation.pdf)
+* [NTU Dissertation Presentation](https://www.dropbox.com/s/ng723f7eabuudpx/NTU_Dissertation_Presentation.pdf)
 * [TODOs](https://github.com/ekaakurniawan/FpgaNeuroDock/wiki/TODOs)
 
 ##Python-OpenCL Implementation
