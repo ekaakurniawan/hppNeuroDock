@@ -54,7 +54,7 @@ class Quaternion:
     # This should produce a uniformly distributed quaternion, according to
     # Shoemake, Graphics Gems III.6, pp.124-132, "Uniform Random Rotations",
     # published by Academic Press, Inc., (1992)
-    # Generates a unformly-distributed random quaternion (UDQ)
+    # Generates a uniformly-distributed random quaternion (UDQ)
     def uniform(self, rng):
         # strict Shoemake version
         x0 = rng.zero_to_one()

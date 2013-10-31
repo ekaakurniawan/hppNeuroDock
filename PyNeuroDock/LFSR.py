@@ -19,7 +19,7 @@
 #  - http://en.wikipedia.org/wiki/Linear_feedback_shift_register
 #  - Efficient Shift Registers, LFSR Counters, and Long Pseudo-Random Sequence
 #    Generators
-#  - http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf
+#    http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf
 #  - IEEE-754 Analysis Calculator
 #    http://babbage.cs.qc.edu/IEEE-754/
 #  - Xilinx LogiCORE IP Floating-Point Operator

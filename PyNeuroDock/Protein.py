@@ -32,11 +32,32 @@ class Protein:
         self.flex_atoms = []
         # flexible (rotatable) branches
         self.flex_branches = []
+
+        # Original rigid atoms with original location
+        self.ori_rigid_atoms = []
+        # Modified rigid atom locations for energy calculation
+        self.rigid_atoms = []
+
         self.root = None
         # Exclude the atom and the first atom branching out of root from
         # intermolecular energy calculation. The atom ids to be ingnored are
         # stored in ignore_inter.
         self.ignore_inter = []
+
+    def read_pdb(self, filename):
+        with open(filename, 'r') as p_file:
+            for line in p_file:
+                # ATOM
+                if line.startswith("ATOM"):
+                    data = line.split()
+                    atom_id = int(data[1])
+                    tcoord = Axis3(float(data[6]), \
+                                   float(data[7]), \
+                                   float(data[8]))
+                    atom = Atom(atom_id, data[11], tcoord, 0, None)
+                    self.ori_rigid_atoms.append(atom)
+
+            self.reset_rigid_atoms()
 
     def read_flex_pdbqt(self, filename):
         with open(filename, 'r') as p_file:
@@ -114,6 +135,9 @@ class Protein:
     def reset_flex_atoms(self):
         self.flex_atoms = deepcopy(self.ori_flex_atoms)
 
+    def reset_rigid_atoms(self):
+        self.rigid_atoms = deepcopy(self.ori_rigid_atoms)
+
     def get_flex_atom_tcoords(self):
         tcoords = []
         for flex_atom in self.flex_atoms:
@@ -124,6 +148,13 @@ class Protein:
         tcoords = np.array([[0., 0., 0.] for i in xrange(len(self.flex_atoms))], \
                            dtype = float)
         for idx, atom in enumerate(self.flex_atoms):
+            tcoords[idx] = atom.tcoord.xyz
+        return tcoords
+
+    def get_rigid_atom_tcoords_in_numpy(self):
+        tcoords = np.array([[0., 0., 0.] for i in xrange(len(self.rigid_atoms))], \
+                           dtype = float)
+        for idx, atom in enumerate(self.rigid_atoms):
             tcoords[idx] = atom.tcoord.xyz
         return tcoords
 

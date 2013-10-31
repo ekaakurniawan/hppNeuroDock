@@ -24,6 +24,7 @@
 # >>> print Analysis.rmsd_pdbqts("./Results/ind_autodock_-15.66.pdbqt", "./Results/ind_pyneurodock_-14.27.pdbqt")
 
 from Ligand import Ligand
+from Protein import Protein
 import numpy as np
 
 class Analysis:
@@ -46,4 +47,19 @@ class Analysis:
     @staticmethod
     def rmsd_tcoords(tcoords1, tcoords2, ttl_atoms):
         return np.sqrt(np.sum((tcoords1 - tcoords2) ** 2) / ttl_atoms)
+
+    @staticmethod
+    def rmsd_pdb(pdb_file1, pdb_file2):
+        protein1 = Protein()
+        protein1.read_pdb(pdb_file1)
+        protein2 = Protein()
+        protein2.read_pdb(pdb_file2)
+        return Analysis.rmsd_proteins(protein1, protein2)
+
+    @staticmethod
+    def rmsd_proteins(protein1, protein2):
+        ttl_atoms = len(protein1.rigid_atoms)
+        tcoords1 = protein1.get_rigid_atom_tcoords_in_numpy()
+        tcoords2 = protein2.get_rigid_atom_tcoords_in_numpy()
+        return Analysis.rmsd_tcoords(tcoords1, tcoords2, ttl_atoms)
 
