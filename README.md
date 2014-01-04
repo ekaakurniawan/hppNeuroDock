@@ -25,8 +25,8 @@ To run:
 
 Benchmark:
 * On Unix shell (Bash), **PyNeuroDock** directory, execute: **./Benchmark.sh**
-* Python: Sequential processing run on 2.3GHz Intel Core i7
-* Python-OpenCL GPU: Parallel processing run on NVIDIA GeForce GT 650M 1GB
-* Python-OpenCL CPU: Parallel processing run on 2.3GHz Intel Core i7
+* Python: Sequential processing run on 2.3GHz Intel Core i7 (1 thread)
+* Python-OpenCL GPU: Parallel processing run on NVIDIA GeForce GT 650M 1GB (384 CUDA cores)
+* Python-OpenCL CPU: Parallel processing run on 2.3GHz Intel Core i7 (4 cores, 8 threads)
 
 ![Pyton-OpenCL Benchmark](https://raw.github.com/ekaakurniawan/FpgaNeuroDock/master/Images/Benchmark/Python-OpenCL_500Gens.png)
