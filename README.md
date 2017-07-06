@@ -1,11 +1,9 @@
-# Molecular Docking Tool
-
-![Binding Mode](https://raw.github.com/ekaakurniawan/hppNeuroDock/master/Images/Molecule/ProteinSS_hsg1_ind.png)
-
 The goal of this project is to develop heterogenous parallel program to accelerate molecular docking. Some features include;
 * [AutoDock 4](http://autodock.scripps.edu) implementation for semiempirical energy function.
 * Historical genetic algorithm for conformational search.
 * Python implementation using OpenCL as the accelerator.
+
+![Binding Mode](https://raw.github.com/ekaakurniawan/hppNeuroDock/master/Images/Molecule/ProteinSS_hsg1_ind.png)
 
 Documents:
 * [NTU Dissertation](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/NTU%20Dissertation.pdf)
