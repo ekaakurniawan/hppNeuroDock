@@ -1,4 +1,4 @@
-The goal of this project is to develop heterogenous parallel program to accelerate molecular docking. Some features include;
+The goal of this project is to develop heterogenous parallel program to accelerate molecular docking simulation. Some features include;
 * [AutoDock 4](http://autodock.scripps.edu) implementation for semiempirical energy function.
 * Historical genetic algorithm for conformational search.
 * Python implementation using OpenCL as the accelerator.
