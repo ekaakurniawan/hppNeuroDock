@@ -1,6 +1,6 @@
-#Molecular Docking Tool
+# Molecular Docking Tool
 
-![Binding Mode](https://raw.github.com/ekaakurniawan/FpgaNeuroDock/master/Images/Molecule/ProteinSS_hsg1_ind.png)
+![Binding Mode](https://raw.github.com/ekaakurniawan/hppNeuroDock/master/Images/Molecule/ProteinSS_hsg1_ind.png)
 
 The goal of this project is to develop heterogenous parallel program to accelerate molecular docking. Some features include;
 * [AutoDock 4](http://autodock.scripps.edu) implementation for semiempirical energy function.
@@ -8,11 +8,12 @@ The goal of this project is to develop heterogenous parallel program to accelera
 * Python implementation using OpenCL as the accelerator.
 
 Documents:
-* [NTU Dissertation](https://www.dropbox.com/s/56cebveo9o844nh/NTU_Dissertation.pdf)
-* [NTU Dissertation Presentation](https://www.dropbox.com/s/ng723f7eabuudpx/NTU_Dissertation_Presentation.pdf)
-* [TODOs](https://github.com/ekaakurniawan/FpgaNeuroDock/wiki/TODOs)
+* [NTU Dissertation](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/NTU%20Dissertation.pdf)
+* [NTU Dissertation Slides](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/NTU%20Dissertation%20Slides.pdf)
+* [IEEE Life Sciences Grand Challenges Conference Paper](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/IEEE%20Paper.pdf)
+* [IEEE Life Sciences Grand Challenges Conference Poster](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/IEEE%20Poster.pdf)
 
-##Python-OpenCL Implementation
+## Python-OpenCL Implementation
 
 Tested on:
 * Python 2.7.3
@@ -29,4 +30,4 @@ Benchmark:
 * Python-OpenCL GPU: Parallel processing run on NVIDIA GeForce GT 650M 1GB (384 CUDA cores)
 * Python-OpenCL CPU: Parallel processing run on 2.3GHz Intel Core i7 (4 cores, 8 threads)
 
-![Pyton-OpenCL Benchmark](https://raw.github.com/ekaakurniawan/FpgaNeuroDock/master/Images/Benchmark/Python-OpenCL_500Gens.png)
+![Pyton-OpenCL Benchmark](https://raw.github.com/ekaakurniawan/hppNeuroDock/master/Images/Benchmark/Python-OpenCL_500Gens.png)
