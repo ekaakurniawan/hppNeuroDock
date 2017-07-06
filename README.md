@@ -8,8 +8,8 @@ The goal of this project is to develop heterogenous parallel program to accelera
 Documents:
 * [NTU Dissertation](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/NTU%20Dissertation.pdf)
 * [NTU Dissertation Slides](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/NTU%20Dissertation%20Slides.pdf)
-* [IEEE Life Sciences Grand Challenges Conference Paper](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/IEEE%20Paper.pdf)
-* [IEEE Life Sciences Grand Challenges Conference Poster](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/IEEE%20Poster.pdf)
+* [Paper for IEEE Life Sciences Grand Challenges Conference 2013 in Singapore](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/IEEE%20Paper.pdf)
+* [Poster for IEEE Life Sciences Grand Challenges Conference 2013 in Singapore](https://github.com/ekaakurniawan/hppNeuroDock/raw/master/Dissertation/IEEE%20Poster.pdf)
 
 ## Python-OpenCL Implementation
 
